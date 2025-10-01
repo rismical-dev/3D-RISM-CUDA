@@ -4,7 +4,8 @@
 #include "rism3d.h"
 #include "extension.h"
 
-void RISM3D :: output_xmu(double * & xmu, double pmv, double pressure) {
+void RISM3D :: output_xmu(double * & xmu, double dft, double pmv, 
+                          double pressure) {
     
   ofstream out_file;
   out_file.open((fname + extxmu).c_str());
@@ -24,6 +25,12 @@ void RISM3D :: output_xmu(double * & xmu, double pmv, double pressure) {
   double pcterm = - pressure * pmv * ibeta;
 
   out_file << " $RESULT" << endl;
+
+  if (rmdft) {
+    out_file << "SFE_RMDFT= " << fixed << setprecision(5) 
+  	   << ibeta * dft << " !(J/mol)" << endl;
+    out_file << endl;
+  }
 
   out_file << "SFE_SC= " << fixed << setprecision(5) 
   	   << ibeta * xmua << " !(J/mol)" << endl;
@@ -47,7 +54,7 @@ void RISM3D :: output_xmu(double * & xmu, double pmv, double pressure) {
            << pmv * 1000 << " !(L/mol)" << endl;
 
   out_file << "Pressure= " << fixed << setprecision(5)
-           << pressure * kcal2J << " !(J/m^3)" << endl;
+           << ibeta * pressure << " !(J/m^3)" << endl;
 
   out_file << "Correction_Term= " << fixed << setprecision(5) 
              << pcterm << " !(J/mol)" << endl;

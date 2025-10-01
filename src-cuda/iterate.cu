@@ -86,5 +86,5 @@ void RISM3D :: iterate(int cu) {
 	       ce -> ngrid * sizeof(double2), cudaMemcpyDefault);
   }
   delete ma;
-  delete fft;
+//  delete fft;
 } 

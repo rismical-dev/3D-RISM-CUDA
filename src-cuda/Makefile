@@ -6,7 +6,7 @@ CFLAGS 	= -O3 -fomit-frame-pointer -fopenmp -std=c++14
 
 NVCC	= nvcc
 
-NVFLAGS = -O3 -m64 -gencode=arch=compute_90,code=sm_90 -I$(CUDA_DIR)/include
+NVFLAGS = -O3 -m64 -gencode=arch=compute_86,code=sm_86 -I$(CUDA_DIR)/include
 
 LDFLAGS = -L$(CUDA_DIR)/lib64 
 LIBS = -lcufft -lcuda -lcudart 
@@ -20,6 +20,7 @@ OBJS   	= main.o\
 	  cal_Coulomb.o\
 	  cal_euv.o\
 	  cal_exchem.o\
+	  cal_rmdft.o\
 	  cal_grad.o\
 	  cal_LJ.o\
 	  cal_pmv.o\
@@ -32,6 +33,7 @@ OBJS   	= main.o\
 	  cell.o\
 	  dealloc2D.o\
 	  dealloc3D.o\
+          excp_fd.o\
 	  fft3d.o\
 	  initialize.o\
 	  initialize_g.o\
@@ -52,6 +54,7 @@ OBJS   	= main.o\
 	  solute.o\
 	  solvent_read.o\
 	  solvent_spline.o\
+	  solvent_spline2.o\
 	  spline.o\
 	  splint.o\
 	  write_tuv.o\

@@ -9,13 +9,14 @@ int main (int argc, char * argv[]) {
   int cu, dn;
   string input;
   string structure;
+  string hs;
   string esp;
   bool centering = true;
 
   cu = dn = 0;
   system = new RISM3D;
 
-  while ((ch = getopt(argc, argv, "c:d:i:s:e:f")) != -1) {
+  while ((ch = getopt(argc, argv, "c:d:i:s:r:e:f")) != -1) {
     switch (ch){
     case 'c':
       cu = atoi(optarg);
@@ -28,6 +29,9 @@ int main (int argc, char * argv[]) {
       break;
     case 's':
       structure = optarg;
+      break;
+    case 'r':
+      hs = optarg;
       break;
     case 'e':
       esp = optarg;
@@ -45,10 +49,10 @@ int main (int argc, char * argv[]) {
     input = argv[optind];
   }
 
-  cout << "Set device " << dn << endl ;
+  cout << "Set device " << dn << endl;
   cudaSetDevice(dn);
   if (cu > 0) cout << "Charge up " << cu << endl;
-  system -> initialize(input, structure, esp, centering);
+  system -> initialize(input, structure, esp, hs, centering);
   system -> iterate(cu);
   system -> output();    
 

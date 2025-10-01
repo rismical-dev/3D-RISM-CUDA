@@ -11,8 +11,11 @@ void RISM3D :: output() {
     double pmv = cal_pmv();
     double pressure = cal_pressure();
     double * xmu = new double[sv -> natv * 2];
+    double dft;
+
     cal_exchem(xmu);
-    output_xmu(xmu, pmv, pressure);
+    if (rmdft) dft = cal_rmdft();
+    output_xmu(xmu, dft, pmv, pressure);
     delete[] xmu;
   }
 
