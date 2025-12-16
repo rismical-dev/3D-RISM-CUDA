@@ -22,14 +22,14 @@ public:
   RISM3D () {ce = new Cell; co = new Control; su = new Solute;
     sv = new Solvent; ma = new AN2; fft = new FFT3D;}
   ~RISM3D () {delete ce, co, su, sv;} 
-  void initialize (string, string, string, string, bool);
+  void initialize (string, string, string, string, bool, bool);
   void iterate (int);    
   void output ();
 private:
   void add_tuv (double);
   void cal_Coulomb (string);
   double cal_euv ();
-  void cal_exchem (double * &);
+  void cal_exchem (double * &, double * &);
   double cal_rmdft ();
   void cal_grad (double * &);
   void cal_LJ ();
@@ -45,7 +45,7 @@ private:
   void output_grad (double * &);
   void output_guv ();
   void output_huv ();
-  void output_xmu (double * &, double, double, double);
+  void output_xmu (double * &, double * &, double, double, double);
   void read_input (string, string, bool);
   void read_tuv ();
   void set_fname (string, string);
@@ -68,6 +68,7 @@ private:
   string fname;
   dim3 g, b;
   bool rmdft = false;
+  bool zero = false;
 
   // Device
   double2 * dguv;

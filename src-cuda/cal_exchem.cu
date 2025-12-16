@@ -1,7 +1,7 @@
 #include <thrust/device_vector.h>
 #include "rism3d.h"
 
-void RISM3D :: cal_exchem (double * & xmu) {
+void RISM3D :: cal_exchem (double * & xmu, double * & xmu2) {
   __global__ void ekh(double * ds, double2 * dhuv, double * dt);
   __global__ void ehnc(double * ds, double2 * dhuv, double * dt);
   __global__ void egf(double * ds, double2 * dhuv, double * dt);
@@ -24,6 +24,16 @@ void RISM3D :: cal_exchem (double * & xmu) {
     }
   } 
 
+  if (clos == 0) {
+    for (int iv = 0; iv < sv -> natv; ++iv) {
+      ehnc <<< g, b, b.x * sizeof(double) >>>
+	(ds, dhuv + (iv * ce -> ngrid), dt + (iv * ce -> ngrid));
+      thrust::device_ptr<double> ds_ptr(ds);
+      double s = thrust::reduce(ds_ptr, ds_ptr + g.x * g.y);
+      xmu2[iv] = s * sv -> rhov[iv];
+    }
+  }
+  
   for (int iv = 0; iv < sv -> natv; ++iv) {
     egf <<< g, b, b.x * sizeof(double) >>>
       (ds, dhuv + (iv * ce -> ngrid), dt+(iv * ce -> ngrid));
@@ -34,6 +44,10 @@ void RISM3D :: cal_exchem (double * & xmu) {
 
   for (int iv = 0; iv < sv -> natv * 2; ++iv) {
     xmu[iv] = xmu[iv] * ce -> dv;
+  }
+
+  for (int iv = 0; iv < sv -> natv; ++iv) {
+    xmu2[iv] = xmu2[iv] * ce -> dv;
   }
 } 
 

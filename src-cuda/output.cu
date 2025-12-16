@@ -11,12 +11,13 @@ void RISM3D :: output() {
     double pmv = cal_pmv();
     double pressure = cal_pressure();
     double * xmu = new double[sv -> natv * 2];
+    double * xmu2 = new double[sv -> natv];
     double dft;
 
-    cal_exchem(xmu);
+    cal_exchem(xmu, xmu2);
     if (rmdft) dft = cal_rmdft();
-    output_xmu(xmu, dft, pmv, pressure);
-    delete[] xmu;
+    output_xmu(xmu, xmu2, dft, pmv, pressure);
+    delete[] xmu, xmu2;
   }
 
   if (outlist.find("d") != string::npos) {

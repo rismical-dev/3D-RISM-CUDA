@@ -25,6 +25,8 @@ void RISM3D :: cal_Coulomb (string esp) {
   cudaMemset(dfr, 0.0, ce -> ngrid * sizeof(double));
   cudaMemset(dfk, 0.0, ce -> ngrid * sizeof(double2));
 
+  if (zero) return;
+  
   coulomb <<< g, b >>> (de, dfr, su -> dr, su -> dq,
 			ce -> dr[0], ce -> dr[1], ce -> dr[2], 
 			ce -> grid[0], ce -> grid[1], ce -> grid[2], su -> num);
