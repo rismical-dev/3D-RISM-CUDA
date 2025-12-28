@@ -53,7 +53,7 @@ void RISM3D :: output_xmu(double * & xmu, double * & xmu2, double * & se,
 
     for (int iv = 0; iv < sv -> natv; ++iv) {
       out_file << "  SFEC_SC_HNC(" << iv << ")= " << fixed << setprecision(5) 
-               << ibeta * xmu[iv] << endl;
+               << ibeta * xmu2[iv] << endl;
     }
     out_file << endl;
   }
