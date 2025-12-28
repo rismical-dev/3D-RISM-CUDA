@@ -24,13 +24,26 @@ V100      9.9
 </pre>
 
 ### REFERENCE
+[1]
 
-Maruyama, Yutaka; Hirata, Fumio
+Maruyama, Yutaka  and Yoshida, Norio
 
-J. Chem. Theory Comput. 2012, 8, 3015-3021
+J. Comput. Chem., (2024) 45, 1470-1482 
+
+RISMiCal: A software package to perform fast RISM/3D-RISM calculations
+
+DOI: 10.1002/jcc.27340
+
+https://onlinelibrary.wiley.com/doi/10.1002/jcc.27340
+
+[2]
+
+Maruyama, Yutaka and Hirata, Fumio
+
+J. Chem. Theory Comput. (2012), 8, 3015-3021
 
 Modified Anderson Method for Accelerating 3D-RISM Calculations Using Graphics Processing Unit
 
-doi: 10.1021/ct300355r
+DOI: 10.1021/ct300355r
 
 https://pubs.acs.org/doi/abs/10.1021/ct300355r
