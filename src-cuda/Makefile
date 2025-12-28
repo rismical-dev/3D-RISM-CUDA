@@ -20,6 +20,7 @@ OBJS   	= main.o\
 	  cal_Coulomb.o\
 	  cal_euv.o\
 	  cal_exchem.o\
+	  cal_se.o\
 	  cal_rmdft.o\
 	  cal_grad.o\
 	  cal_LJ.o\

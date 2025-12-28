@@ -4,8 +4,8 @@
 #include "rism3d.h"
 #include "extension.h"
 
-void RISM3D :: output_xmu(double * & xmu, double * & xmu2, double dft,
-                          double pmv, double pressure) {
+void RISM3D :: output_xmu(double * & xmu, double * & xmu2, double * & se,
+                          double dft, double pmv, double pressure) {
 
   string fxmu;
   if (!zero) {
@@ -69,6 +69,20 @@ void RISM3D :: output_xmu(double * & xmu, double * & xmu2, double dft,
   for (int iv = 0; iv < sv -> natv; ++iv) {
     out_file << "  SFEC_GF(" << iv << ")= " << fixed << setprecision(5)
              << ibeta * xmu[sv -> natv + iv] << endl;
+  }
+  out_file << endl;
+
+  xmua = 0.0;
+  for (int iv = 0; iv < sv -> natv; ++iv) {
+    xmua += se[iv];
+  }
+
+  out_file << "SE= " << fixed << setprecision(5) 
+	   << ibeta * xmua << " !(J/mol)" << endl;
+
+  for (int iv = 0; iv < sv -> natv; ++iv) {
+    out_file << "  SEC(" << iv << ")= " << fixed << setprecision(5)
+             << ibeta * se[iv] << endl;
   }
   out_file << endl;
 
