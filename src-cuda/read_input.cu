@@ -72,15 +72,18 @@ void RISM3D :: read_input (string control, string structure, bool centering) {
   for (int iu = 0; iu < su -> num; ++iu) {
     int n = iu * 4;
     in_file >> su -> sig[iu] >> su -> eps[iu] >> su -> q[iu]
-	    >> su -> r[n] >> su -> r[n + 1]
-	    >> su -> r[n + 2];
+	    >> su -> r[n] >> su -> r[n + 1] >> su -> r[n + 2];
   }
+
+  in_file.close ();
 
   if (centering) {
     ce -> shift = su -> centering();
   }
 
-  in_file.close ();
-
+  if (zero) {
+    su -> zero();
+  }
+    
   su -> setup_cuda();
 }

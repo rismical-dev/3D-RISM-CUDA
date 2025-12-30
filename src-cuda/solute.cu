@@ -42,6 +42,12 @@ double * Solute :: centering() {
  return shift;
 }
 
+void Solute :: zero() {
+  for (int n = 0; n < num; ++n) {
+    q[n] = 0.0;
+  }
+}
+
 void Solute :: setup_cuda() {
   cudaMalloc(&dq, num * sizeof(double));
   cudaMalloc(&dr, num * sizeof(double4));
