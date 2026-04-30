@@ -73,17 +73,32 @@ void RISM3D :: output_xmu(double * & xmu, double * & xmu2, double * & se,
   out_file << endl;
 
   xmua = 0.0;
-  for (int iv = 0; iv < sv -> natv; ++iv) {
+  for (int iv = 0; iv < sv -> natv * 2; ++iv) {
     xmua += se[iv];
   }
 
   out_file << "SE= " << fixed << setprecision(5) 
 	   << ibeta * xmua << " !(J/mol)" << endl;
 
-  for (int iv = 0; iv < sv -> natv; ++iv) {
-    out_file << "  SEC(" << iv << ")= " << fixed << setprecision(5)
-             << ibeta * se[iv] << endl;
+  xmua = 0.0;
+  for (int iv = sv -> natv; iv < sv -> natv * 2; ++iv) {
+    xmua += se[iv];
   }
+  out_file << "  SE_ES= " << fixed << setprecision(5)
+            << ibeta * xmua << endl;
+
+  xmua = 0.0;
+  for (int iv = 0; iv < sv -> natv; ++iv) {
+    xmua += se[iv];
+  }
+  out_file << "  SE_LJ= " << fixed << setprecision(5)
+            << ibeta * xmua << endl;
+  
+
+//  for (int iv = 0; iv < sv -> natv; ++iv) {
+//    out_file << "  SEC(" << iv << ")= " << fixed << setprecision(5)
+//             << ibeta * se[iv] << endl;
+//  }
   out_file << endl;
 
   out_file << "PMV= " << fixed << setprecision(5)
