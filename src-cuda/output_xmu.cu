@@ -93,7 +93,6 @@ void RISM3D :: output_xmu(double * & xmu, double * & xmu2, double * & se,
   }
   out_file << "  SE_LJ= " << fixed << setprecision(5)
             << ibeta * xmua << endl;
-  
 
 //  for (int iv = 0; iv < sv -> natv; ++iv) {
 //    out_file << "  SEC(" << iv << ")= " << fixed << setprecision(5)

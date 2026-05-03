@@ -46,4 +46,11 @@ void RISM3D :: output() {
     double euv = cal_euv();
     output_euv(euv);
   }
+
+  if (outlist.find("q") != string::npos) {
+    double * qv = new double[ce -> ngrid];
+    cal_qv(qv);
+    output_qv(qv);
+    delete[] qv;
+  }
 } 
