@@ -71,9 +71,9 @@ __global__ void timeirvol(double2 * da, const int * __restrict__ dir, double vol
 __global__ void set_kf(double2 * dkf, int nx, int ny, int nz) {
   unsigned int ip = threadIdx.x + blockIdx.x * blockDim.x
     + blockIdx.y * blockDim.x * gridDim.x;
-  int x = threadIdx.x - nx / 2.0;
-  int y = blockIdx.x - ny / 2.0;
-  int z = blockIdx.y - nz / 2.0;
+  int x = threadIdx.x - nx / 2;
+  int y = blockIdx.x - ny / 2;
+  int z = blockIdx.y - nz / 2;
   double dkx = M_PI / nx;
   double dky = M_PI / ny;
   double dkz = M_PI / nz;

@@ -25,17 +25,7 @@ void Solvent :: spline (vector <double> & ga, int * & indga,
   if (rmdft) alloc3D (cvva, natv, natv, nga);
 
   int ntabb = 0;
-  for (int n = 0; n < ntab; ++n) {
-    if (ttab[n] < ga[0]) 
-      ntabb = n;
-  }
-
   int ntabe = ntab - 1;
-  for (int n = ntab - 1; n > 0; --n) {
-    if (ttab[n] > ga[nga - 1]) 
-      ntabe = n;
-  }
-
   int np = ntabe - ntabb + 1;
 
   double * x = new double[np];
@@ -67,7 +57,7 @@ void Solvent :: spline (vector <double> & ga, int * & indga,
 #pragma omp parallel for
         for (int i = 0; i < nga; ++i) {
           cvva[iv2][iv1][i] = splint(x, y, coe, np, ga[i]);
-        }
+	}
       }
     }
   }

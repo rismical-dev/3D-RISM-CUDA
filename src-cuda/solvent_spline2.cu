@@ -23,17 +23,7 @@ void Solvent :: spline2 (vector <double> & ga, int * & indga,
   alloc2D(wfka, natv, nga);
 
   int ntabb = 0;
-  for (int n = 0; n < ntab2; ++n) {
-    if (ttab2[n] < ga[0]) 
-      ntabb = n;
-  }
-
   int ntabe = ntab2 - 1;
-  for (int n = ntab2 - 1; n > 0; --n) {
-    if (ttab2[n] > ga[nga - 1]) 
-      ntabe = n;
-  }
-
   int np = ntabe - ntabb + 1;
 
   double * x = new double[np];
