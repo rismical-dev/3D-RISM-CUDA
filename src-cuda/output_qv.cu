@@ -24,7 +24,7 @@ void RISM3D :: output_qv(double * & qv) {
              << setw(12) << setprecision(4) << kx
              << setw(12) << setprecision(4) << ky
              << setw(12) << setprecision(4) << kz
-             << "  "                        // 2x
+             << "  "
              << scientific
              << setw(16) << setprecision(8) << qv[ig] * dv
              << endl;
