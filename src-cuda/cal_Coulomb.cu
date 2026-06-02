@@ -38,27 +38,47 @@ void RISM3D :: cal_Coulomb (string esp) {
     double ubeta = hartree2J * bohr / (boltzmann * sv -> temper);
     beta2 <<< g, b >>> (de, ubeta);
   } else {
-    ifstream in_file;
-    in_file.open (esp.c_str());
+
+    ifstream in_file(esp.c_str());
+    if (!in_file.is_open()) {
+      std::cerr << "Error during read esp file: " << esp << std::endl;
+      exit(1);
+    }
+
+    std::string char80;
+    std::getline(in_file, char80);
+    std::getline(in_file, char80);
+
+    int natom_cube, di;
+    double x0, y0, z0;
+    if (!(in_file >> natom_cube >> x0 >> y0 >> z0 >> di)) {
+      std::cerr << "Error reading atom count and origin." << std::endl;
+      exit(1);
+    }
+    
+    int nx, ny, nz;
+    double dx[3], dy[3], dz[3];
+    in_file >> nx >> dx[0] >> dx[1] >> dx[2];
+    in_file >> ny >> dy[0] >> dy[1] >> dy[2];
+    in_file >> nz >> dz[0] >> dz[1] >> dz[2];
+
+    if (nx != ce -> grid[0] || ny != ce -> grid[1] || nz != ce -> grid[2]) {
+        std::cerr << "Error. cube file doesn't match input." << std::endl;
+	exit(1);
+    }
+
+    for (int i = 0; i < natom_cube; ++i) {
+      int iatnum;
+      double atchg, atx, aty, atz;
+      in_file >> iatnum >> atchg >> atx >> aty >> atz;
+    }
+
+    double val;
     double *e = new double[ce -> ngrid];
-    double dummy;
 
     for (int i = 0; i < ce -> ngrid; ++i) {
-      string line;
-      string data;
-      getline(in_file, line);
-      stringstream ss(line);
-      ss >> setw(20) >> dummy
-         >> setw(20) >> dummy
-         >> setw(20) >> dummy
-         >> setw(20) >> data;
-      double evalue;
-      try {
-        evalue = stod(data);
-      } catch (const std::invalid_argument& e) {
-        evalue = 0.0;
-      }     
-      e[i] = evalue;
+      in_file >> val;
+      e[i] = val;
     }
     in_file.close();
 
@@ -67,7 +87,6 @@ void RISM3D :: cal_Coulomb (string esp) {
     beta2 <<< g, b >>> (de, ubeta);
     delete[] e;
   }
-
 } 
 
 
@@ -127,3 +146,4 @@ __global__ void beta2(double * de, double ubeta) {
     + blockIdx.y * blockDim.x * gridDim.x;
   de[ip] *= ubeta;
 }
+

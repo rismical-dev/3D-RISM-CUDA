@@ -5,7 +5,7 @@
 
 void RISM3D :: output_qv(double * & qv) {
 
-  cout << "outputting qv to file:  " << fname + extgra << "  ..." << endl;
+  cout << "outputting qv to file:  " << fname + extqv << "  ..." << endl;
 
   ofstream out_file;
   out_file.open ((fname + extqv).c_str());
