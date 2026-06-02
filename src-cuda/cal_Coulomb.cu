@@ -73,12 +73,24 @@ void RISM3D :: cal_Coulomb (string esp) {
       in_file >> iatnum >> atchg >> atx >> aty >> atz;
     }
 
-    double val;
+//    double val;
     double *e = new double[ce -> ngrid];
 
-    for (int i = 0; i < ce -> ngrid; ++i) {
-      in_file >> val;
-      e[i] = val;
+//    for (int i = 0; i < ce -> ngrid; ++i) {
+//      in_file >> val;
+//      e[i] = val;
+//    }
+    for (int ix = 0; ix < ce -> grid[0]; ++ix) {
+      for (int iy = 0; iy < ce -> grid[1]; ++iy) {
+        for (int iz = 0; iz < ce -> grid[2]; ++iz) {
+          double val;
+          in_file >> val;
+	  size_t k = static_cast<size_t>(ix) 
+                   + static_cast<size_t>(iy) * ce -> grid[0]
+                   + static_cast<size_t>(iz) * ce -> grid[0] *  ce -> grid[1];
+          e[k] = val;
+        }
+      }
     }
     in_file.close();
 
