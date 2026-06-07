@@ -23,11 +23,13 @@ void RISM3D :: output() {
   }
 
   if (outlist.find("d") != string::npos) {
-    double * du;
-    du = new double[su -> num * 3];
-    cal_grad(du);
-    output_grad(du);
-    delete[] du;
+    double * dulj;
+    double * due;
+    dulj = new double[su -> num * 3];
+    due = new double[su -> num * 3];    
+    cal_grad(dulj, due);
+    output_grad(dulj, due);
+    delete[] dulj, due;
   }
 
   if (outlist.find("c") != string::npos) {

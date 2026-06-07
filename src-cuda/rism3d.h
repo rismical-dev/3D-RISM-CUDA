@@ -33,7 +33,7 @@ private:
   void cal_qv (double * &);  
   void cal_se (double * &);  
   double cal_rmdft ();
-  void cal_grad (double * &);
+  void cal_grad (double * &, double * &);
   void cal_LJ ();
   double cal_pmv ();
   void cal_potential (string);
@@ -44,7 +44,7 @@ private:
   void initialize_tuv ();
   void output_cuv ();
   void output_euv (double);
-  void output_grad (double * &);
+  void output_grad (double * &, double * &);
   void output_guv ();
   void output_huv ();
   void output_qv (double * &);
