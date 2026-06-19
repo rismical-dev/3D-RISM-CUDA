@@ -52,7 +52,6 @@ __global__ void gradlj(double * ds, double2 * dguv, double * dsig,
   		       double * deps,  double4 * dr, 
 		       int natu, int iv, int iu) {
   extern __shared__ double sdata[];
-  const double cc = hartree2J * bohr * avogadoro;
 
   unsigned int ip = threadIdx.x + blockIdx.x * blockDim.x
     + blockIdx.y * blockDim.x * gridDim.x;
@@ -102,7 +101,7 @@ __global__ void grade(double * ds, double2 * dguv, double * dsig,
 		      double4 * dr, double * qu,
 		      double qv, int natu, int iv, int iu) {
   extern __shared__ double sdata[];
-  const double cc = hartree2J * bohr * avogadoro;
+  const double cc = hartree * bohr * avogadoro;
 
   unsigned int ip = threadIdx.x + blockIdx.x * blockDim.x
     + blockIdx.y * blockDim.x * gridDim.x;

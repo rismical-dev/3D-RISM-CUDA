@@ -28,7 +28,7 @@ public:
 private:
   void add_tuv (double);
   void cal_Coulomb (string);
-  double cal_euv ();
+  void cal_euv (double * &);
   void cal_exchem (double * &, double * &);
   void cal_qv (double * &);  
   void cal_se (double * &);  
@@ -43,7 +43,7 @@ private:
   void initialize_g ();
   void initialize_tuv ();
   void output_cuv ();
-  void output_euv (double);
+  void output_euv (double * &);
   void output_grad (double * &, double * &);
   void output_guv ();
   void output_huv ();

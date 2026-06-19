@@ -31,11 +31,11 @@ void RISM3D :: cal_Coulomb (string esp) {
 
   fk <<< g, b >>> (dfk, dgv, su -> dr, su -> dq, su -> num);
 
-  double ubeta = hartree2J * bohr / (boltzmann * sv -> temper);
+  double ubeta = hartree * bohr / (boltzmann * sv -> temper);
   beta <<< g, b >>> (dfr, dfk, ubeta);
 
   if (esp.empty()) {
-    double ubeta = hartree2J * bohr / (boltzmann * sv -> temper);
+    double ubeta = hartree * bohr / (boltzmann * sv -> temper);
     beta2 <<< g, b >>> (de, ubeta);
   } else {
 
@@ -90,7 +90,7 @@ void RISM3D :: cal_Coulomb (string esp) {
     in_file.close();
 
     cudaMemcpyAsync(de, e, ce -> ngrid * sizeof(double), cudaMemcpyDefault);
-    double ubeta = hartree2J / (boltzmann * sv -> temper);
+    double ubeta = hartree / (boltzmann * sv -> temper);
     beta2 <<< g, b >>> (de, ubeta);
     delete[] e;
   }

@@ -7,6 +7,12 @@ void RISM3D :: output() {
 
   transform(outlist.begin(), outlist.end(), outlist.begin(), ::tolower);
 
+  double * euv;
+  if (outlist.find("m") != string::npos || outlist.find("e") != string::npos) {
+    euv = new double[su -> num * sv -> natv * 2];
+    cal_euv(euv);
+  }
+  
   if (outlist.find("m") != string::npos) {
     double pmv = cal_pmv();
     double pressure = cal_pressure();
@@ -16,10 +22,9 @@ void RISM3D :: output() {
     double dft;
 
     cal_exchem(xmu, xmu2);
-    cal_se(se);
     if (rmdft) dft = cal_rmdft();
-    output_xmu(xmu, xmu2, se, dft, pmv, pressure);
-    delete[] xmu, xmu2, se;
+    output_xmu(xmu, xmu2, euv, dft, pmv, pressure);
+    delete[] xmu, xmu2;
   }
 
   if (outlist.find("d") != string::npos) {
@@ -45,7 +50,6 @@ void RISM3D :: output() {
   }
 
   if (outlist.find("e") != string::npos) {
-    double euv = cal_euv();
     output_euv(euv);
   }
 

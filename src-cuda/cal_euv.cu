@@ -1,52 +1,76 @@
 #include <thrust/device_vector.h>
 #include "rism3d.h"
-  
-double RISM3D :: cal_euv () {
-  __global__ void euv(double * ds, double2 * dhuv, 
-                      double * du, double * de, double q);
-  
-  double euv0 = 0.0 ;
-  for (int iv = 0; iv < sv -> natv; ++iv) {
-    euv <<< g, b, b.x * sizeof(double) >>> (ds, dguv + (iv * ce -> ngrid),
-                        du + (iv * ce -> ngrid), de, sv -> qv[iv]);
-    thrust::device_ptr<double> ds_ptr(ds);			 
-    double s = thrust::reduce(ds_ptr, ds_ptr + g.x * g.y);
-    euv0 += s * sv -> rhov[iv];
+
+__constant__ double3 dv;
+__constant__ int3 grid;
+
+void RISM3D :: cal_euv (double * & e) {
+  __global__ void euv(double * ds, double2 * dhuv, double * dsig,
+                      double * deps,  double4 * dr, double * qu, double gv,
+		      int natu, int iv, int iu);
+
+  int ng = ce -> ngrid;
+
+  cudaMemcpyToSymbol(dv, ce -> dr, sizeof(double3));
+  cudaMemcpyToSymbol(grid, ce -> grid, sizeof(int3));
+  double * ds2;
+  cudaMalloc(&ds2, g.x * g.y * 2 * sizeof(double));
+
+  for (size_t iv = 0; iv < sv -> natv; ++iv) {
+    for (size_t iu = 0; iu < su -> num; ++iu) {
+      euv <<< g, b, b.x * 2 * sizeof(double) >>>
+        (ds2, dguv + iv * ng, dsig, deps, su -> dr, su -> dq, sv -> qv[iv],
+         su -> num, iv, iu);
+      thrust::device_ptr<double> ds2_ptr(ds2);
+      for (int i = 0; i < 2; ++i) {
+        double s = thrust::reduce(ds2_ptr + (g.x * g.y) * i,
+                                ds2_ptr + (g.x * g.y) * (i + 1));
+        e[(sv -> natv * su -> num) * i + su -> num * iv + iu] =
+  	  s * sv -> rhov[iv];
+      }
+    }
   }
-  
-  euv0 *= ce -> dv;
-  return (euv0);
 }
   
-__global__ void euv(double * ds, double2 * dguv, 
-	            double * du, double * de, double q) {
+__global__ void euv(double * ds, double2 * dguv, double * dsig,
+                    double * deps,  double4 * dr, double * qu,
+		    double qv, int natu, int iv, int iu) {
   extern __shared__ double sdata[];
-  
+  const double cc = hartree * bohr * avogadoro;
+
   unsigned int ip = threadIdx.x + blockIdx.x * blockDim.x
     + blockIdx.y * blockDim.x * gridDim.x;
-  
-  sdata[threadIdx.x] = dguv[ip].x * (du[ip] + de[ip] * q);
+  int iuv = iu + iv * natu;
+
+  double dx = ((int)threadIdx.x - grid.x / 2) * dv.x - dr[iu].x;
+  double dy = ((int)blockIdx.x - grid.y / 2) * dv.y - dr[iu].y;
+  double dz = ((int)blockIdx.y - grid.z / 2) * dv.z - dr[iu].z;
+  double r2 = dx * dx + dy * dy + dz * dz;
+  double r1 = sqrt(r2);
+
+  if (r1 < dsig[iuv] * 0.5) {
+    sdata[threadIdx.x] = 0.0;
+    sdata[threadIdx.x + blockDim.x] = 0.0;
+  } else {
+    double rs2i = dsig[iuv] * dsig[iuv] / r2;
+    double rs6i = rs2i * rs2i * rs2i;
+    double ulj = deps[iuv] * 4.0 * rs6i * ( rs6i - 1.0) * dguv[ip].x;
+    double uco = qu[iu] * qv / r1 * cc * dguv[ip].x;
+    sdata[threadIdx.x] = ulj;
+    sdata[threadIdx.x + blockDim.x] = uco;    
+  }
   __syncthreads();
-  
-  for (unsigned int s = blockDim.x / 2; s > 32; s >>= 1) {
+
+  for (unsigned int s = blockDim.x / 2; s > 0; s >>= 1) {
     if (threadIdx.x < s) {
       sdata[threadIdx.x] += sdata[threadIdx.x + s];
+      sdata[threadIdx.x + blockDim.x] += sdata[threadIdx.x + blockDim.x + s];
     }
     __syncthreads();
   }
-  if (threadIdx.x < 32) {
-    volatile double *smem = sdata;
-    smem[threadIdx.x] += smem[threadIdx.x + 32];
-    __syncwarp();
-    smem[threadIdx.x] += smem[threadIdx.x + 16];
-    __syncwarp();
-    smem[threadIdx.x] += smem[threadIdx.x + 8];
-    __syncwarp();
-    smem[threadIdx.x] += smem[threadIdx.x + 4];
-    __syncwarp();
-    smem[threadIdx.x] += smem[threadIdx.x + 2];
-    __syncwarp();
-    smem[threadIdx.x] += smem[threadIdx.x + 1];
+  if (threadIdx.x == 0) {
+    ds[blockIdx.x + blockIdx.y * gridDim.x] = sdata[0];
+    ds[blockIdx.x + blockIdx.y * gridDim.x + gridDim.x * gridDim.y] =
+      sdata[blockDim.x];
   }
-  if (threadIdx.x == 0) ds[blockIdx.x + blockIdx.y * gridDim.x] = sdata[0];
 }
