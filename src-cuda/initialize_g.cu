@@ -5,7 +5,7 @@
 #include "rism3d.h"
 
 void RISM3D :: initialize_g() {
-  __global__ void set_g(double4 * dgv, double * dg2, 
+  __global__ void set_g(double3 * dgv, double * dg2, 
 			double bx, double by, double bz,
 			int nx, int ny, int nz);
 
@@ -14,7 +14,7 @@ void RISM3D :: initialize_g() {
   int * indg2 = new int[ce -> ngrid];
 
   double * dg2;
-  cudaMalloc(&dgv, ce -> ngrid * sizeof(double4));
+  cudaMalloc(&dgv, ce -> ngrid * sizeof(double3));
   cudaMalloc(&dindga, ce -> ngrid * sizeof(int));
   cudaMalloc(&dg2, ce -> ngrid * sizeof(double));
 
@@ -50,7 +50,7 @@ void RISM3D :: initialize_g() {
 }
 
 
-__global__ void set_g(double4 * dgv, double * dg2, 
+__global__ void set_g(double3 * dgv, double * dg2, 
 		      double bx, double by, double bz, 
 		      int nx, int ny, int nz) {
   unsigned int ip = threadIdx.x + blockIdx.x * blockDim.x

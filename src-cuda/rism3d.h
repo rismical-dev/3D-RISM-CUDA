@@ -80,7 +80,7 @@ private:
   double * dtr;
   double * du;
   double * de;
-  double4 * dgv;
+  double3 * dgv;
   double * dsig;
   double * deps;
   double * dfr;

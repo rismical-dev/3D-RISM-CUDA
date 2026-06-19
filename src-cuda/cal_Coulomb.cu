@@ -10,7 +10,7 @@ void RISM3D :: cal_Coulomb (string esp) {
 			  double4 * dru, double * dqu,
 			  double dx, double dy, double dz,
 			  int nx, int ny, int nz, int natu);
-  __global__ void fk(double2 *, const double4 * __restrict__ , 
+  __global__ void fk(double2 *, const double3 * __restrict__ , 
 		     const double4 * __restrict__ , const double * __restrict__, 
 		     int);
   __global__ void beta(double * dfr, double2 * dfk, double ubeta);
@@ -122,7 +122,7 @@ __global__ void coulomb(double * de, double * dfr,
 }
 
 
-__global__ void fk(double2 * dfk, const double4 * __restrict__ dgv, 
+__global__ void fk(double2 * dfk, const double3 * __restrict__ dgv, 
 		   const double4 * __restrict__ dru, 
 		   const double * __restrict__ dqu, int natu) {
   unsigned int ip = threadIdx.x + blockIdx.x * blockDim.x
