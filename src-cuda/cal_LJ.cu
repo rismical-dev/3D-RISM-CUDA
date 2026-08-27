@@ -4,11 +4,12 @@
 void RISM3D :: cal_LJ() {
   __global__ void LJ(double * du, const double * __restrict__ dsig, 
 		     const double * __restrict__ deps, 
-		     const double4 * __restrict__ dru,
+		     const double3 * __restrict__ dru,
 		     double cut2, double ikbt, double bx, double by, double bz,
 		     int nx, int ny, int nz, int natu, int iv);
 
-  const double cut = 1.0e-2;
+//  const double cut = 1.0e-2;
+  const double cut = 2.0e-3;
   const double cut2 = cut * cut;
 
   cout << "tabulating solute Lennard-Jones potential ..." << endl;
@@ -21,11 +22,18 @@ void RISM3D :: cal_LJ() {
   siguv = new double[su -> num * sv -> natv];
   epsuv = new double[su -> num * sv -> natv];
 
+  double lambda1;
+  if (adswitch == 1) {
+    lambda1 = lambda;
+  } else {
+    lambda1 = 1.0;
+  }
+
   for (int iv = 0; iv < sv -> natv; ++iv) {
 #pragma omp parallel for
     for (int iu = 0; iu < su -> num; ++iu) {
       int ip = iu + su -> num * iv;
-      siguv[ip] = (su -> sig[iu] + sv -> sigv[iv]) * 0.5;
+      siguv[ip] = (su -> sig[iu] + sv -> sigv[iv]) * 0.5 * lambda1;
       epsuv[ip] = sqrt (su -> eps[iu] * sv -> epsv[iv]);
     }
   }
@@ -46,7 +54,7 @@ void RISM3D :: cal_LJ() {
 
 __global__ void LJ(double * du, const double * __restrict__ dsig, 
 		   const double * __restrict__ deps, 
-		   const double4 * __restrict__ dru,
+		   const double3 * __restrict__ dru,
                    double cut2, double ikbt, double bx, double by, double bz,
                    int nx, int ny, int nz, int natu, int iv) {
   unsigned int ip = threadIdx.x + blockIdx.x * blockDim.x
@@ -61,11 +69,13 @@ __global__ void LJ(double * du, const double * __restrict__ dsig,
     double dz = rz - dru[iu].z;
     double r2 = dx * dx + dy * dy + dz * dz ;
 
-    if (r2 < cut2) r2 = cut2;
+//    if (r2 < cut2) r2 = cut2;
+//    double irs2 = dsig[iuv] * dsig[iuv] / r2;
+//    double irs6 = irs2 * irs2 * irs2;
 
-    double irs2 = dsig[iuv] * dsig[iuv] / r2;
-
-    double irs6 = irs2 * irs2 * irs2;
+    double rs2 = r2 / (dsig[iuv] * dsig[iuv]);
+    if (rs2 < cut2) rs2 = cut2;
+    double irs6 = 1.0 / (rs2 * rs2 * rs2);
     du[ip] += deps[iuv] * 4.0 * irs6 * (irs6 - 1.0);
   }
   du[ip] *= ikbt;

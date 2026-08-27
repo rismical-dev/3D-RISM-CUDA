@@ -6,7 +6,7 @@ __constant__ int3 grid;
 
 void RISM3D :: cal_euv (double * & e) {
   __global__ void euv(double * ds, double2 * dhuv, double * dsig,
-                      double * deps,  double4 * dr, double * qu, double gv,
+                      double * deps,  double3 * dr, double * qu, double gv,
 		      int natu, int iv, int iu);
 
   int ng = ce -> ngrid;
@@ -33,7 +33,7 @@ void RISM3D :: cal_euv (double * & e) {
 }
   
 __global__ void euv(double * ds, double2 * dguv, double * dsig,
-                    double * deps,  double4 * dr, double * qu,
+                    double * deps,  double3 * dr, double * qu,
 		    double qv, int natu, int iv, int iu) {
   extern __shared__ double sdata[];
   const double cc = hartree * bohr * avogadoro;

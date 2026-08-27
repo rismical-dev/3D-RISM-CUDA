@@ -7,7 +7,7 @@ void Solute :: init(int n) {
   q = new double[num];
   sig = new double[num];
   eps = new double[num];
-  r = new double[num * 4];
+  r = new double[num * 3];
 }
 
 double * Solute :: centering() {
@@ -19,7 +19,7 @@ double * Solute :: centering() {
   xmax = ymax = zmax = std::numeric_limits<double>::lowest();
 
   for (int n = 0; n < num; ++n) {
-    int i = n * 4;
+    int i = n * 3;
     if (xmin > r[i]) xmin = r[i];
     if (ymin > r[i + 1]) ymin = r[i + 1];
     if (zmin > r[i + 2]) zmin = r[i + 2];
@@ -33,7 +33,7 @@ double * Solute :: centering() {
   shift[2] = round(- (zmax - zmin) / 2 - zmin);
 
   for (int n = 0; n < num; ++n) {
-    int i = n * 4;
+    int i = n * 3;
     r[i] += shift[0];
     r[i + 1] += shift[1];
     r[i + 2] += shift[2];
@@ -50,7 +50,7 @@ void Solute :: zero() {
 
 void Solute :: setup_cuda() {
   cudaMalloc(&dq, num * sizeof(double));
-  cudaMalloc(&dr, num * sizeof(double4));
+  cudaMalloc(&dr, num * sizeof(double3));
   cudaMemcpyAsync(dq, q, num * sizeof(double), cudaMemcpyDefault);
-  cudaMemcpyAsync(dr, r, num * sizeof(double4), cudaMemcpyDefault);
+  cudaMemcpyAsync(dr, r, num * sizeof(double3), cudaMemcpyDefault);
 }

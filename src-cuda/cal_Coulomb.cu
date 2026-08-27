@@ -7,12 +7,12 @@
 
 void RISM3D :: cal_Coulomb (string esp) {
   __global__ void coulomb(double * de, double * dfr,
-			  double4 * dru, double * dqu,
+			  double3 * dru, double * dqu,
 			  double dx, double dy, double dz,
 			  int nx, int ny, int nz, int natu);
   __global__ void fk(double2 *, const double3 * __restrict__ , 
-		     const double4 * __restrict__ , const double * __restrict__, 
-		     int);
+		     const double3 * __restrict__ ,
+		     const double * __restrict__, int);
   __global__ void beta(double * dfr, double2 * dfk, double ubeta);
   __global__ void beta2(double * de, double ubeta);
 
@@ -25,14 +25,18 @@ void RISM3D :: cal_Coulomb (string esp) {
   cudaMemset(dfr, 0.0, ce -> ngrid * sizeof(double));
   cudaMemset(dfk, 0.0, ce -> ngrid * sizeof(double2));
 
-  coulomb <<< g, b >>> (de, dfr, su -> dr, su -> dq,
-			ce -> dr[0], ce -> dr[1], ce -> dr[2], 
-			ce -> grid[0], ce -> grid[1], ce -> grid[2], su -> num);
+  if (adswitch != 1) {
+    coulomb <<< g, b >>> (de, dfr, su -> dr, su -> dq,
+    	    ce -> dr[0], ce -> dr[1], ce -> dr[2], 
+	    ce -> grid[0], ce -> grid[1], ce -> grid[2], su -> num);
 
-  fk <<< g, b >>> (dfk, dgv, su -> dr, su -> dq, su -> num);
+    fk <<< g, b >>> (dfk, dgv, su -> dr, su -> dq, su -> num);
 
-  double ubeta = hartree * bohr / (boltzmann * sv -> temper);
-  beta <<< g, b >>> (dfr, dfk, ubeta);
+    double lambda2 = 1.0;
+    if (adswitch == 2) lambda2 = lambda;
+    double ubeta = hartree * bohr / (boltzmann * sv -> temper) * lambda2;
+    beta <<< g, b >>> (dfr, dfk, ubeta);
+  }
 
   if (esp.empty()) {
     double ubeta = hartree * bohr / (boltzmann * sv -> temper);
@@ -98,7 +102,7 @@ void RISM3D :: cal_Coulomb (string esp) {
 
 
 __global__ void coulomb(double * de, double * dfr,
-                        double4 * dru, double * dqu,
+                        double3 * dru, double * dqu,
                         double bx, double by, double bz,
                         int nx, int ny, int nz, int natu) {
   unsigned int ip = threadIdx.x + blockIdx.x * blockDim.x
@@ -123,7 +127,7 @@ __global__ void coulomb(double * de, double * dfr,
 
 
 __global__ void fk(double2 * dfk, const double3 * __restrict__ dgv, 
-		   const double4 * __restrict__ dru, 
+		   const double3 * __restrict__ dru, 
 		   const double * __restrict__ dqu, int natu) {
   unsigned int ip = threadIdx.x + blockIdx.x * blockDim.x
     + blockIdx.y * blockDim.x * gridDim.x;

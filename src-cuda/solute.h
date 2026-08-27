@@ -15,7 +15,7 @@ class Solute {
   double * eps;
   double * r;
   double * dq;
-  double4 * dr;
+  double3 * dr;
   int num;
 };
 

@@ -7,10 +7,10 @@ __constant__ int nu;
 
 void RISM3D :: cal_grad(double * & dulj, double * & due) {
   __global__ void gradlj(double * ds, double2 * dguv, double * dsig, 
-		         double * deps,  double4 * dr, 
+		         double * deps,  double3 * dr, 
 		         int natu, int iv, int iu);
   __global__ void grade(double * ds, double2 * dguv, double * dsig, 
-		        double4 * dr, double * qu, double gv,
+		        double3 * dr, double * qu, double gv,
 		        int natu, int iv, int iu);
 
   cudaMemcpyToSymbol(dv, ce -> dr, sizeof(double3));
@@ -49,7 +49,7 @@ void RISM3D :: cal_grad(double * & dulj, double * & due) {
 
 
 __global__ void gradlj(double * ds, double2 * dguv, double * dsig, 
-  		       double * deps,  double4 * dr, 
+  		       double * deps,  double3 * dr, 
 		       int natu, int iv, int iu) {
   extern __shared__ double sdata[];
 
@@ -98,7 +98,7 @@ __global__ void gradlj(double * ds, double2 * dguv, double * dsig,
 }
 
 __global__ void grade(double * ds, double2 * dguv, double * dsig, 
-		      double4 * dr, double * qu,
+		      double3 * dr, double * qu,
 		      double qv, int natu, int iv, int iu) {
   extern __shared__ double sdata[];
   const double cc = hartree * bohr * avogadoro;
