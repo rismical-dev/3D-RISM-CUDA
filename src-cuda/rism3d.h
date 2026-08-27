@@ -21,11 +21,14 @@ class RISM3D {
 public:
   RISM3D () {ce = new Cell; co = new Control; su = new Solute;
     sv = new Solvent; ma = new AN2; fft = new FFT3D;}
-  ~RISM3D () {delete ce, co, su, sv;} 
+  ~RISM3D () {delete ce, co, su, sv;}
+  void set_ad (double, int);
   void initialize (string, string, string, string, bool, bool);
-  void iterate (int);    
+  void iterate (int);
   void output ();
 private:
+  void cal_ad1 (double * &);
+  void cal_ad2 (double * &);
   void add_tuv (double);
   void cal_Coulomb (string);
   void cal_euv (double * &);
@@ -42,6 +45,7 @@ private:
   void calculate (double);
   void initialize_g ();
   void initialize_tuv ();
+  void output_ad (double * &);
   void output_cuv ();
   void output_euv (double * &);
   void output_grad (double * &, double * &);
@@ -63,9 +67,11 @@ private:
   vector <double> ga;
   double * siguv;
   double * epsuv;
+  double lambda;
   int * indga;
   int clos;
   int nga;
+  int adswitch = 0;
   string outlist;
   string fsolvent;
   string fname;

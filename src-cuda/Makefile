@@ -17,6 +17,8 @@ OBJS   	= main.o\
 	  alloc3D.o\
 	  anderson.o\
 	  anderson_cuda.o\
+	  cal_ad1.o\
+	  cal_ad2.o\
 	  cal_Coulomb.o\
 	  cal_euv.o\
 	  cal_exchem.o\
@@ -42,6 +44,7 @@ OBJS   	= main.o\
 	  initialize_tuv.o\
 	  iterate.o\
 	  output.o\
+	  output_ad.o\
 	  output_cuv.o\
 	  output_euv.o\
 	  output_grad.o\
@@ -51,6 +54,7 @@ OBJS   	= main.o\
 	  output_xmu.o\
 	  read_input.o\
 	  read_tuv.o\
+	  set_ad.o\
 	  set_cuda.o\
 	  set_fname.o\
 	  set_solvent.o\

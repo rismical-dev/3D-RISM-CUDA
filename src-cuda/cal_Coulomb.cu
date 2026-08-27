@@ -25,6 +25,9 @@ void RISM3D :: cal_Coulomb (string esp) {
   cudaMemset(dfr, 0.0, ce -> ngrid * sizeof(double));
   cudaMemset(dfk, 0.0, ce -> ngrid * sizeof(double2));
 
+  double lambda2 = 1.0;
+  if (adswitch == 2) lambda2 = lambda;
+  
   if (adswitch != 1) {
     coulomb <<< g, b >>> (de, dfr, su -> dr, su -> dq,
     	    ce -> dr[0], ce -> dr[1], ce -> dr[2], 
@@ -32,14 +35,12 @@ void RISM3D :: cal_Coulomb (string esp) {
 
     fk <<< g, b >>> (dfk, dgv, su -> dr, su -> dq, su -> num);
 
-    double lambda2 = 1.0;
-    if (adswitch == 2) lambda2 = lambda;
     double ubeta = hartree * bohr / (boltzmann * sv -> temper) * lambda2;
     beta <<< g, b >>> (dfr, dfk, ubeta);
   }
 
   if (esp.empty()) {
-    double ubeta = hartree * bohr / (boltzmann * sv -> temper);
+    double ubeta = hartree * bohr / (boltzmann * sv -> temper) * lambda2;
     beta2 <<< g, b >>> (de, ubeta);
   } else {
 

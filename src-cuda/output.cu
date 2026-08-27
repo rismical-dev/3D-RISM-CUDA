@@ -49,6 +49,18 @@ void RISM3D :: output() {
     output_huv();
   }
 
+  if (outlist.find("a") != string::npos) {
+    double * ad;
+    ad = new double[su -> num];
+    if (adswitch == 1) {
+      cal_ad1(ad);
+    } else {
+      cal_ad2(ad);
+    }
+    output_ad(ad);
+    delete[] ad;
+  }
+
   if (outlist.find("e") != string::npos) {
     output_euv(euv);
   }

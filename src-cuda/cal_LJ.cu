@@ -22,12 +22,8 @@ void RISM3D :: cal_LJ() {
   siguv = new double[su -> num * sv -> natv];
   epsuv = new double[su -> num * sv -> natv];
 
-  double lambda1;
-  if (adswitch == 1) {
-    lambda1 = lambda;
-  } else {
-    lambda1 = 1.0;
-  }
+  double lambda1 = 1.0;
+  if (adswitch == 1) lambda1 = lambda;
 
   for (int iv = 0; iv < sv -> natv; ++iv) {
 #pragma omp parallel for

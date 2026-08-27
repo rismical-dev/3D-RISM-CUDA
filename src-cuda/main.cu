@@ -17,7 +17,7 @@ int main (int argc, char * argv[]) {
   cu = dn = 0;
   system = new RISM3D;
 
-  while ((ch = getopt(argc, argv, "c:d:i:s:r:e:fz")) != -1) {
+  while ((ch = getopt(argc, argv, "c:d:i:s:r:1:2:e:fz")) != -1) {
     switch (ch){
     case 'c':
       cu = atoi(optarg);
@@ -33,6 +33,12 @@ int main (int argc, char * argv[]) {
       break;
     case 'r':
       hs = optarg;
+      break;
+    case '1':
+      system -> set_ad (atof(optarg), 1);
+      break;
+    case '2':
+      system -> set_ad (atof(optarg), 2);
       break;
     case 'e':
       esp = optarg;
