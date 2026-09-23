@@ -3,7 +3,7 @@
 #include "cell.h"
 using namespace std;
 
-#define MAX_DR 0.5
+constexpr double MAX_DR = 0.5;
 
 void Cell :: setup() {
   volume = box[0] * box[1] * box[2];
@@ -15,7 +15,7 @@ void Cell :: setup() {
   shift[0] = shift[1] = shift[2] = 0.0;
   if (dr[0] > MAX_DR || dr[1] > MAX_DR || dr[2] > MAX_DR) {
     cout << "##########################################" << endl;
-    cout << "WARRING: Grid spacing is greater than "
+    cout << "WARNING: Grid spacing is greater than "
 	 << MAX_DR << "." << endl;
     cout << "##########################################" << endl;
   }
