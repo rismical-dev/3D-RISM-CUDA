@@ -2,14 +2,14 @@
 #define EXTENSION_H
 #include <string>
 
-const string extxmu = ".xmu";
-const string extxmu0 = ".xmu0";
-const string extguv = ".guv";
-const string exthuv = ".huv";
-const string extcuv = ".cuv";
-const string exttuv = ".tuv";
-const string extgra = ".gra";
-const string exteuv = ".euv";
-const string extqv = ".qv";
+const std::string extxmu = ".xmu";
+const std::string extxmu0 = ".xmu0";
+const std::string extguv = ".guv";
+const std::string exthuv = ".huv";
+const std::string extcuv = ".cuv";
+const std::string exttuv = ".tuv";
+const std::string extgra = ".gra";
+const std::string exteuv = ".euv";
+const std::string extqv = ".qv";
 
 #endif  // EXTENSION_H
