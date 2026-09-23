@@ -8,8 +8,8 @@ NVCC	= nvcc
 
 NVFLAGS = -O3 -m64 -gencode=arch=compute_90,code=sm_90 -I$(CUDA_DIR)/include
 
-LDFLAGS = -L$(CUDA_DIR)/lib64 
-LIBS = -lcufft -lcuda -lcudart 
+LDFLAGS = -L$(CUDA_DIR)/lib64
+LIBS = -lcufft -lcuda -lcudart
 
 OBJS   	= main.o\
 	  add_tuv.o\
@@ -59,6 +59,7 @@ OBJS   	= main.o\
 	  set_fname.o\
 	  set_solvent.o\
 	  solute.o\
+	  solvent.o\
 	  solvent_read.o\
 	  solvent_spline.o\
 	  solvent_spline2.o\
@@ -81,4 +82,4 @@ $(PROGRAM) : $(OBJS)
 
 clean:;	@rm -f $(OBJS) core
 
-$(OBJS) : 
+$(OBJS) :

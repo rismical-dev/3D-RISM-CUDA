@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
-#include <valarray>
 #include <vector>
 #include "physical.h"
 #include "cell.h"
@@ -21,7 +20,25 @@ class RISM3D {
 public:
   RISM3D () {ce = new Cell; co = new Control; su = new Solute;
     sv = new Solvent; ma = new AN2; fft = new FFT3D;}
-  ~RISM3D () {delete ce, co, su, sv;}
+  // ma is deliberately NOT deleted here: iterate() already does
+  // "delete ma;" itself once the SCF loop converges (AN2 isn't needed
+  // again after that), so deleting it a second time here would be a
+  // double-free. fft has no such early delete -- iterate() keeps it
+  // alive on purpose (cal_rmdft(), called from output(), still needs
+  // fft->execute()) -- and previously wasn't deleted anywhere at all,
+  // which was a real leak; it belongs here, once output() has returned.
+  ~RISM3D () {delete ce; delete co; delete su; delete sv; delete fft;}
+
+  // RISM3D owns several heap-allocated sub-objects (ce, co, su, sv, ma,
+  // fft), some of which (ma, fft) in turn own CUDA/cuFFT resources.
+  // Copying a RISM3D would give two objects the same pointers, and
+  // whichever is destroyed first would free state the other still thinks
+  // it owns. Nothing in the codebase copies a RISM3D today (main.cu only
+  // ever holds one through a pointer), so disabling copy costs nothing
+  // and rules that bug class out entirely.
+  RISM3D (const RISM3D &) = delete;
+  RISM3D & operator= (const RISM3D &) = delete;
+
   void set_ad (double, int);
   void initialize (string, string, string, string, bool, bool);
   void iterate (int);
@@ -33,8 +50,8 @@ private:
   void cal_Coulomb (string);
   void cal_euv (double * &);
   void cal_exchem (double * &, double * &);
-  void cal_qv (double * &);  
-  void cal_se (double * &);  
+  void cal_qv (double * &);
+  void cal_se (double * &);
   double cal_rmdft ();
   void cal_grad (double * &, double * &);
   void cal_LJ ();
