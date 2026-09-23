@@ -7,7 +7,10 @@ using namespace std;
 
 class Solvent {
  public:
-  Solvent () {}
+  Solvent () : dx(nullptr), dc(nullptr), dw(nullptr), drho(nullptr),
+               rhov(nullptr), qv(nullptr), sigv(nullptr), epsv(nullptr),
+               pfhs(nullptr), wfk0(nullptr), temper(0.0), xt(0.0), natv(0),
+               ttab(nullptr), ttab2(nullptr), ntab(0), ntab2(0) {}
   ~Solvent ();
   void read (string, string);
   void spline (vector <double> &, int * &, int, int, bool);

@@ -66,7 +66,7 @@ void Solvent :: spline2 (vector <double> & ga, int * & indga,
 
   cudaMalloc(&dc, nga * natv * natv * sizeof(double));
   cudaMalloc(&dw, nga * natv * sizeof(double));
-  
+
   for (int iv2 = 0; iv2 < natv; ++iv2) {
     for (int iv1 = 0; iv1 < natv; ++iv1) {
       cudaMemcpyAsync(dc + (iv1 * nga) + (iv2 * natv * nga),
