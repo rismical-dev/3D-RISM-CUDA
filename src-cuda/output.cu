@@ -12,29 +12,31 @@ void RISM3D :: output() {
     euv = new double[su -> num * sv -> natv * 2];
     cal_euv(euv);
   }
-  
+
   if (outlist.find("m") != string::npos) {
     double pmv = cal_pmv();
     double pressure = cal_pressure();
     double * xmu = new double[sv -> natv * 2];
     double * xmu2 = new double[sv -> natv];
     double * se = new double[sv -> natv * 2];
-    double dft;
+    double dft = 0.0;
 
     cal_exchem(xmu, xmu2);
     if (rmdft) dft = cal_rmdft();
     output_xmu(xmu, xmu2, euv, dft, pmv, pressure);
-    delete[] xmu, xmu2;
+    delete[] xmu;
+    delete[] xmu2;
   }
 
   if (outlist.find("d") != string::npos) {
     double * dulj;
     double * due;
     dulj = new double[su -> num * 3];
-    due = new double[su -> num * 3];    
+    due = new double[su -> num * 3];
     cal_grad(dulj, due);
     output_grad(dulj, due);
-    delete[] dulj, due;
+    delete[] dulj;
+    delete[] due;
   }
 
   if (outlist.find("c") != string::npos) {
