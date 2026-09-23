@@ -3,15 +3,13 @@
 #include <string>
 
 #include "solvent.h"
+#include "spline.h"
 
 void Solvent :: spline2 (vector <double> & ga, int * & indga,
 			int nga, int ngrid) {
   void alloc2D (vector <double *> &, int, int);
   void dealloc2D (vector <double *> &);
   void dealloc3D (vector < vector <double *> > &);
-
-  void spline (double * &, double * &, int, vector <double *> &);
-  double splint (double * &, double * &, vector <double *> &, int, double);
 
   if (ga[nga - 1] > ttab2[ntab - 1]) {
     cout << "insufficient maximal T tabulated" << endl;
@@ -39,7 +37,7 @@ void Solvent :: spline2 (vector <double> & ga, int * & indga,
     for (int n = 0; n < np; ++n) {
       y[n] = chs[iv][ntabb + n] ;
     }
-    spline(x, y, np, coe) ;
+    ::spline(x, y, np, coe) ;
 #pragma omp parallel for
     for (int i = 0; i < nga; ++i) {
       chsa[iv][i] = splint(x, y, coe, np, ga[i]);
@@ -50,7 +48,7 @@ void Solvent :: spline2 (vector <double> & ga, int * & indga,
     for (int n = 0; n < np; ++n) {
       y[n] = wfk[iv][ntabb + n] ;
     }
-    spline(x, y, np, coe) ;
+    ::spline(x, y, np, coe) ;
 #pragma omp parallel for
     for (int i = 0; i < nga; ++i) {
       wfka[iv][i] = splint(x, y, coe, np, ga[i]);

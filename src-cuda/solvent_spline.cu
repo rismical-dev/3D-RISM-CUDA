@@ -4,6 +4,7 @@
 #include <omp.h>
 
 #include "solvent.h"
+#include "spline.h"
 
 void Solvent :: spline (vector <double> & ga, int * & indga,
 			int nga, int ngrid, bool rmdft) {
@@ -11,9 +12,6 @@ void Solvent :: spline (vector <double> & ga, int * & indga,
   void alloc3D (vector <vector <double *> > &, int, int, int);
   void dealloc2D (vector <double *> &);
   void dealloc3D (vector < vector <double *> > &);
-
-  void spline (double * &, double * &, int, vector <double *> &);
-  double splint (double * &, double * &, vector <double *> &, int, double);
 
   if (ga[nga - 1] > ttab[ntab - 1]) {
     cout << "insufficient maximal T tabulated" << endl;
@@ -39,7 +37,7 @@ void Solvent :: spline (vector <double> & ga, int * & indga,
 	x[n] = ttab[ntabb + n] ;
 	y[n] = xvv[iv2][iv1][ntabb + n] ;
       }
-      spline(x, y, np, coe) ;
+      ::spline(x, y, np, coe) ;
 #pragma omp parallel for
       for (int i = 0; i < nga; ++i) {
 	xvva2[iv2][iv1][i] = splint(x, y, coe, np, ga[i]);
@@ -53,7 +51,7 @@ void Solvent :: spline (vector <double> & ga, int * & indga,
         for (int n = 0; n < np; ++n) {
            y[n] = cvv[iv2][iv1][ntabb + n] ;
         }
-        spline(x, y, np, coe) ;
+        ::spline(x, y, np, coe) ;
 #pragma omp parallel for
         for (int i = 0; i < nga; ++i) {
           cvva[iv2][iv1][i] = splint(x, y, coe, np, ga[i]);
@@ -74,7 +72,7 @@ void Solvent :: spline (vector <double> & ga, int * & indga,
   }
 
   cudaMalloc(&dx, ngrid * natv * natv * sizeof(double));
-  
+
   for (int iv2 = 0; iv2 < natv; ++iv2) {
     for (int iv1 = 0; iv1 < natv; ++iv1) {
       cudaMemcpyAsync(dx + (iv1 * ngrid) + (iv2 * natv * ngrid),
