@@ -1,18 +1,29 @@
+// Every kernel in this file addresses the same flattened 3D grid the same
+// way (see AN2::initialize: b.x/g.x/g.y give threadIdx.x the fastest-
+// varying axis and blockIdx.x/blockIdx.y the other two). Factored out so
+// the indexing scheme only has to be read (and fixed, if it ever needs to
+// change) in one place. static (internal linkage) because fft3d.cu
+// defines its own same-named helper for the same reason -- keeping both
+// static avoids a duplicate-symbol clash if these ever get compiled with
+// device-code linking (-rdc=true) enabled.
+static __device__ __forceinline__ unsigned int gridIndex () {
+  return threadIdx.x + blockIdx.x * blockDim.x
+    + blockIdx.y * blockDim.x * gridDim.x;
+}
+
 __global__ void newdt0 (double * dt, const double * __restrict__ dtr,
                         double * dtp, double * drp) {
-    unsigned int ip = threadIdx.x + blockIdx.x * blockDim.x
-      + blockIdx.y * blockDim.x * gridDim.x;
+    unsigned int ip = gridIndex();
     dtp[ip] = dt[ip];
     drp[ip] = dtr[ip];
     dt[ip] += dtr[ip];
 }
 
 
-__global__ void newdt(double * dt, const double * __restrict__ dtr, 
+__global__ void newdt(double * dt, const double * __restrict__ dtr,
 		      double * dtp, double * drp,
 		      double s1, double s2, double m, int niv, int biv) {
-  unsigned int ip = threadIdx.x + blockIdx.x * blockDim.x
-    + blockIdx.y * blockDim.x * gridDim.x;
+  unsigned int ip = gridIndex();
   double u = dt[ip] + s1 * (dtp[ip] - dt[ip]) + s2 * (dtp[ip + niv] - dt[ip]);
   double v = dt[ip] + dtr[ip]
     + s1 * (dtp[ip] + drp[ip] - dt[ip] - dtr[ip])
@@ -23,12 +34,11 @@ __global__ void newdt(double * dt, const double * __restrict__ dtr,
 }
 
 
-__global__ void theta30(double * ds, const double * __restrict__ dtr, 
+__global__ void theta30(double * ds, const double * __restrict__ dtr,
 			const double * __restrict__ drp, int niv) {
   extern __shared__ double sdata[];
 
-  unsigned int ip = threadIdx.x + blockIdx.x * blockDim.x
-    + blockIdx.y * blockDim.x * gridDim.x;
+  unsigned int ip = gridIndex();
 
   double t1 = dtr[ip] - drp[ip];
   double t2 = dtr[ip] - drp[ip + niv];
@@ -65,69 +75,8 @@ __global__ void theta30(double * ds, const double * __restrict__ dtr,
   }
 }
 
-
-__global__ void theta31(double * ds2, double * ds) {
-  extern __shared__ double sdata[];
-
-  unsigned int ip = threadIdx.x + blockIdx.x * blockDim.x;
-
-  sdata[threadIdx.x] = ds[ip];
-  sdata[threadIdx.x + blockDim.x] = ds[ip + blockDim.x * gridDim.x];
-  sdata[threadIdx.x + blockDim.x * 2] = ds[ip + blockDim.x * gridDim.x * 2];
-  sdata[threadIdx.x + blockDim.x * 3] = ds[ip + blockDim.x * gridDim.x * 3];
-  sdata[threadIdx.x + blockDim.x * 4] = ds[ip + blockDim.x * gridDim.x * 4];
-  __syncthreads();
-
-  for (unsigned int s = blockDim.x / 2; s > 0; s >>= 1) {
-    if (threadIdx.x < s) {
-      sdata[threadIdx.x] += sdata[threadIdx.x + s];
-      sdata[threadIdx.x + blockDim.x] += sdata[threadIdx.x + blockDim.x + s];
-      sdata[threadIdx.x + blockDim.x * 2]
-        += sdata[threadIdx.x + blockDim.x * 2 + s];
-      sdata[threadIdx.x + blockDim.x * 3]
-        += sdata[threadIdx.x + blockDim.x * 3 + s];
-      sdata[threadIdx.x + blockDim.x * 4]
-        += sdata[threadIdx.x + blockDim.x * 4 + s];
-    }
-    __syncthreads();
-  }
-  if (threadIdx.x == 0) {
-    ds2[blockIdx.x] = sdata[0];
-    ds2[blockIdx.x +  gridDim.x] = sdata[blockDim.x];
-    ds2[blockIdx.x +  gridDim.x * 2] = sdata[blockDim.x * 2];
-    ds2[blockIdx.x +  gridDim.x * 3] = sdata[blockDim.x * 3];
-    ds2[blockIdx.x +  gridDim.x * 4] = sdata[blockDim.x * 4];
-  }
-}
-
-
-__global__ void theta32(double * ds, double * ds2) {
-  extern __shared__ double sdata[];
-
-  unsigned int ip = threadIdx.x;
-
-  sdata[ip] = ds2[ip];
-  sdata[ip + blockDim.x] = ds2[ip + blockDim.x];
-  sdata[ip + blockDim.x * 2] = ds2[ip + blockDim.x * 2];
-  sdata[ip + blockDim.x * 3] = ds2[ip + blockDim.x * 3];
-  sdata[ip + blockDim.x * 4] = ds2[ip + blockDim.x * 4];
-  __syncthreads();
-
-  for (unsigned int s = blockDim.x / 2; s > 0; s >>= 1) {
-    if (ip < s) {
-      sdata[ip] += sdata[ip + s];
-      sdata[ip + blockDim.x] += sdata[ip + blockDim.x + s];
-      sdata[ip + blockDim.x * 2] += sdata[ip + blockDim.x * 2 + s];
-      sdata[ip + blockDim.x * 3] += sdata[ip + blockDim.x * 3 + s];
-      sdata[ip + blockDim.x * 4] += sdata[ip + blockDim.x * 4 + s];
-    }
-    __syncthreads();
-  }
-  if (ip == 0) {
-    ds[0] = sdata[0];
-    ds[1] = sdata[blockDim.x];
-    ds[2] = sdata[blockDim.x * 2];
-    ds[3] = sdata[blockDim.x * 3];
-    ds[4] = sdata[blockDim.x * 4];
-  }
-}
+// theta31/theta32, which used to finish the block-sum reduction (ds ->
+// ds2 -> ds) fully on the device, were removed: AN2::cal_theta() has
+// finished that last step with thrust::reduce() for a while and neither
+// kernel was called from anywhere, so they were dead code kept around
+// from an earlier version of this reduction.
