@@ -51,29 +51,15 @@ void AN2 :: initialize (Cell * ce, Solvent * sv) {
   g.y = ce -> grid[2];
 
   // Every kernel below is launched as <<< g, b >>>, i.e. with b.x ==
-  // ce->grid[0] threads per block. grid[0] is chosen for numerical
-  // reasons (grid spacing vs. the box size, see cell.cc's MAX_DR check),
-  // not to fit inside a CUDA block, so a fine enough grid can quietly ask
-  // for more threads per block than the GPU allows. Catching that here,
-  // with a message naming the actual limit and the offending grid size,
-  // is far easier to debug than the launch failure (or silent no-op,
-  // depending on the driver) that would otherwise surface deep inside
-  // calculate()/cal_theta(). This only fires once grid[0] actually
-  // exceeds the device's limit, so it changes nothing for any grid size
-  // that already works.
-  int dev;
-  AN_CUDA_CHECK(cudaGetDevice(&dev));
-  cudaDeviceProp prop;
-  AN_CUDA_CHECK(cudaGetDeviceProperties(&prop, dev));
-  if ((int)b.x > prop.maxThreadsPerBlock) {
-    fprintf(stderr,
-            "AN2::initialize: grid[0] = %u exceeds this device's "
-            "maxThreadsPerBlock = %d; reduce the grid size or restructure "
-            "the launch to split the x-axis across multiple blocks.\n",
-            b.x, prop.maxThreadsPerBlock);
-    exit(1);
-  }
-
+  // ce->grid[0] threads per block. This used to be checked here against
+  // the device's maxThreadsPerBlock, but that check is unreachable now:
+  // RISM3D::set_cuda() (set_cuda.cu) checks the exact same ce->grid[0]
+  // against the exact same device limit, and always runs first --
+  // set_cuda() is called from RISM3D::initialize(), while this function is
+  // only reached later, from iterate()'s "ma -> initialize(ce, sv)". If
+  // grid[0] were too large, set_cuda() would already have exited before
+  // execution ever got here, so the check was removed from this copy
+  // rather than kept as dead code.
   AN_CUDA_CHECK(cudaMalloc(&dtp, ngrid * niv * 2 * sizeof(double)));
   AN_CUDA_CHECK(cudaMalloc(&drp, ngrid * niv * 2 * sizeof(double)));
   AN_CUDA_CHECK(cudaMalloc(&ds, ce -> grid[1] * ce -> grid[2] * 5 * sizeof(double)));

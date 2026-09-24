@@ -8,10 +8,10 @@ int main (int argc, char * argv[]) {
   RISM3D * rism;
   int ch;
   int cu, dn;
-  string input;
-  string structure;
-  string hs;
-  string esp;
+  std::string input;
+  std::string structure;
+  std::string hs;
+  std::string esp;
   bool centering = true;
   bool q0 = false;
 
@@ -54,15 +54,15 @@ int main (int argc, char * argv[]) {
 
   if (input.empty() || structure.empty()) {
     if (argv[optind] == NULL) {
-      cout << "No input file!" << endl;
+      std::cout << "No input file!" << std::endl;
       return (1);
     }
     input = argv[optind];
   }
 
-  cout << "Set device " << dn << endl;
+  std::cout << "Set device " << dn << std::endl;
   AN_CUDA_CHECK(cudaSetDevice(dn));
-  if (cu > 0) cout << "Charge up " << cu << endl;
+  if (cu > 0) std::cout << "Charge up " << cu << std::endl;
   rism -> initialize(input, structure, esp, hs, centering, q0);
   rism -> iterate(cu);
   rism -> output();

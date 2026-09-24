@@ -1,5 +1,6 @@
 #include "solvent.h"
 #include "cuda_check.h"
+#include "alloc.h"
 
 // Solvent::~Solvent() was declared in solvent.h but never defined anywhere
 // in this codebase. That went unnoticed because RISM3D's own destructor
@@ -11,9 +12,6 @@
 // into one of the spline .cu files that also happen to have other jobs)
 // because it has to cudaFree the device buffers this class owns.
 Solvent :: ~Solvent () {
-  void dealloc2D (vector <double *> &);
-  void dealloc3D (vector <vector <double *> > &);
-
   // ttab / ttab2 are NOT freed here. They are already delete[]'d
   // unconditionally, inline, at the end of spline() / spline2() once
   // those functions finish consuming them (see solvent_spline.cu /

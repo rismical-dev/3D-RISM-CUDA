@@ -6,24 +6,26 @@
 
 #include "solvent.h"
 #include "physical.h"
+#include "alloc.h"
 
-void Solvent :: read(string fsolvent, string hs) {
-  void alloc2D (vector <double *> &, int, int);
-  void alloc3D (vector <vector <double * > > &, int, int, int);
-
-  ifstream in_file;
+void Solvent :: read(std::string fsolvent, std::string hs) {
+  std::ifstream in_file;
   in_file.open(fsolvent.c_str());
   if (!in_file) {
     std::cerr << "Solvent file could not be opened!" << std::endl;
     exit (1);
   }
 
-  double * sig;
-  double * eps;
-  double * q;
-  double * den;
-  int * sol;
-  string dummy;  
+  // nullptr-initialized so that the delete[]s at the end of this function
+  // (and the ones on the exit(1) paths below) are safe even if the input
+  // file is malformed and the i == 1 branch below, which is what actually
+  // allocates these, is never reached.
+  double * sig = nullptr;
+  double * eps = nullptr;
+  double * q = nullptr;
+  double * den = nullptr;
+  int * sol = nullptr;
+  std::string dummy;
   double dr;
   int num;
   auto i = 0;
@@ -90,12 +92,24 @@ void Solvent :: read(string fsolvent, string hs) {
     wfk0 = new double[natv]{};
     alloc3D (cvv, natv, natv, ntab);
 
+    // Same fix as RISM3D::set_fname() (set_fname.cu): only strip an
+    // extension found after the last '/', so a directory component
+    // containing a '.' (e.g. ".../case.v2/solvent.dat") doesn't get
+    // truncated at its own dot instead of the filename's.
+    size_t lastslash = fsolvent.find_last_of('/');
+    size_t searchfrom = (lastslash == std::string::npos) ? 0 : lastslash + 1;
     size_t lastdp = fsolvent.rfind('.');
-    std::string cvk = fsolvent.substr(0, lastdp) + ".cvk";
+    std::string cvk = ((lastdp != std::string::npos && lastdp >= searchfrom)
+                        ? fsolvent.substr(0, lastdp) : fsolvent) + ".cvk";
 
     in_file.open(cvk.c_str());
     if (!in_file) {
       std::cerr << "cvk file could not be opened!" << std::endl;
+      delete[] sig;
+      delete[] eps;
+      delete[] q;
+      delete[] den;
+      delete[] sol;
       exit (1);
     }
 
@@ -117,7 +131,12 @@ void Solvent :: read(string fsolvent, string hs) {
 
     in_file.open(hs.c_str());
     if (!in_file) {
-      std::cerr << "Hardsphare file could not be opened!" << std::endl;
+      std::cerr << "Hard sphere file could not be opened!" << std::endl;
+      delete[] sig;
+      delete[] eps;
+      delete[] q;
+      delete[] den;
+      delete[] sol;
       exit (1);
     }
 

@@ -1,9 +1,8 @@
 #include <vector>
 #include "spline.h"
-using namespace std;
 
 double splint (const double * xp, const double * yp,
-	       const vector <double *> & coe, int np, double x) {
+	       const std::vector <double *> & coe, int np, double x) {
   int klo = 0;
   int khi = np - 1;
 

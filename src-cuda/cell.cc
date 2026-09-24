@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <iostream>
 #include "cell.h"
-using namespace std;
 
 constexpr double MAX_DR = 0.5;
 
@@ -14,9 +13,9 @@ void Cell :: setup() {
   dr[2] = box[2] / grid[2];
   shift[0] = shift[1] = shift[2] = 0.0;
   if (dr[0] > MAX_DR || dr[1] > MAX_DR || dr[2] > MAX_DR) {
-    cout << "##########################################" << endl;
-    cout << "WARNING: Grid spacing is greater than "
-	 << MAX_DR << "." << endl;
-    cout << "##########################################" << endl;
+    std::cout << "##########################################" << std::endl;
+    std::cout << "WARNING: Grid spacing is greater than "
+	 << MAX_DR << "." << std::endl;
+    std::cout << "##########################################" << std::endl;
   }
 }

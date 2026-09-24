@@ -4,47 +4,52 @@
 #include <iomanip>
 #include <stdexcept>
 #include "rism3d.h"
+#include "cuda_check.h"
 
-void RISM3D :: cal_Coulomb (string esp) {
+void RISM3D :: cal_Coulomb (std::string esp) {
   __global__ void coulomb(double * de, double * dfr,
 			  double3 * dru, double * dqu,
 			  double dx, double dy, double dz,
 			  int nx, int ny, int nz, int natu);
-  __global__ void fk(double2 *, const double3 * __restrict__ , 
+  __global__ void fk(double2 *, const double3 * __restrict__ ,
 		     const double3 * __restrict__ ,
 		     const double * __restrict__, int);
   __global__ void beta(double * dfr, double2 * dfk, double ubeta);
   __global__ void beta2(double * de, double ubeta);
 
-  cout << "synthesizing solute Coulomb potential ..." << endl;
-  
-  cudaMalloc(&de, ce -> ngrid * sizeof(double));
-  cudaMalloc(&dfr, ce -> ngrid * sizeof(double));
-  cudaMalloc(&dfk, ce -> ngrid * sizeof(double2));
-  cudaMemset(de, 0.0, ce -> ngrid * sizeof(double));
-  cudaMemset(dfr, 0.0, ce -> ngrid * sizeof(double));
-  cudaMemset(dfk, 0.0, ce -> ngrid * sizeof(double2));
+  std::cout << "synthesizing solute Coulomb potential ..." << std::endl;
+
+  AN_CUDA_CHECK(cudaMalloc(&de, ce -> ngrid * sizeof(double)));
+  AN_CUDA_CHECK(cudaMalloc(&dfr, ce -> ngrid * sizeof(double)));
+  AN_CUDA_CHECK(cudaMalloc(&dfk, ce -> ngrid * sizeof(double2)));
+  AN_CUDA_CHECK(cudaMemset(de, 0, ce -> ngrid * sizeof(double)));
+  AN_CUDA_CHECK(cudaMemset(dfr, 0, ce -> ngrid * sizeof(double)));
+  AN_CUDA_CHECK(cudaMemset(dfk, 0, ce -> ngrid * sizeof(double2)));
 
   double lambda2 = 1.0;
   if (adswitch == 2) lambda2 = lambda;
-  
+
   if (adswitch != 1) {
     coulomb <<< g, b >>> (de, dfr, su -> dr, su -> dq,
-    	    ce -> dr[0], ce -> dr[1], ce -> dr[2], 
+    	    ce -> dr[0], ce -> dr[1], ce -> dr[2],
 	    ce -> grid[0], ce -> grid[1], ce -> grid[2], su -> num);
+    AN_CUDA_CHECK(cudaGetLastError());
 
     fk <<< g, b >>> (dfk, dgv, su -> dr, su -> dq, su -> num);
+    AN_CUDA_CHECK(cudaGetLastError());
 
     double ubeta = hartree * bohr / (boltzmann * sv -> temper) * lambda2;
     beta <<< g, b >>> (dfr, dfk, ubeta);
+    AN_CUDA_CHECK(cudaGetLastError());
   }
 
   if (esp.empty()) {
     double ubeta = hartree * bohr / (boltzmann * sv -> temper) * lambda2;
     beta2 <<< g, b >>> (de, ubeta);
+    AN_CUDA_CHECK(cudaGetLastError());
   } else {
 
-    ifstream in_file(esp.c_str());
+    std::ifstream in_file(esp.c_str());
     if (!in_file.is_open()) {
       std::cerr << "Error during read esp file: " << esp << std::endl;
       exit(1);
@@ -60,7 +65,7 @@ void RISM3D :: cal_Coulomb (string esp) {
       std::cerr << "Error reading atom count and origin." << std::endl;
       exit(1);
     }
-    
+
     int nx, ny, nz;
     double dx[3], dy[3], dz[3];
     in_file >> nx >> dx[0] >> dx[1] >> dx[2];
@@ -85,7 +90,7 @@ void RISM3D :: cal_Coulomb (string esp) {
         for (int iz = 0; iz < ce -> grid[2]; ++iz) {
           double val;
           in_file >> val;
-	  size_t k = static_cast<size_t>(ix) 
+	  size_t k = static_cast<size_t>(ix)
                    + static_cast<size_t>(iy) * ce -> grid[0]
                    + static_cast<size_t>(iz) * ce -> grid[0] *  ce -> grid[1];
           e[k] = val;
@@ -94,12 +99,16 @@ void RISM3D :: cal_Coulomb (string esp) {
     }
     in_file.close();
 
-    cudaMemcpyAsync(de, e, ce -> ngrid * sizeof(double), cudaMemcpyDefault);
+    // Synchronous, since e is deleted right below: an async copy here
+    // would let that delete race the H2D transfer (same class of bug
+    // fixed for siguv/epsuv in cal_LJ.cu).
+    AN_CUDA_CHECK(cudaMemcpy(de, e, ce -> ngrid * sizeof(double), cudaMemcpyDefault));
     double ubeta = hartree / (boltzmann * sv -> temper);
     beta2 <<< g, b >>> (de, ubeta);
+    AN_CUDA_CHECK(cudaGetLastError());
     delete[] e;
   }
-} 
+}
 
 
 __global__ void coulomb(double * de, double * dfr,
@@ -127,8 +136,8 @@ __global__ void coulomb(double * de, double * dfr,
 }
 
 
-__global__ void fk(double2 * dfk, const double3 * __restrict__ dgv, 
-		   const double3 * __restrict__ dru, 
+__global__ void fk(double2 * dfk, const double3 * __restrict__ dgv,
+		   const double3 * __restrict__ dru,
 		   const double * __restrict__ dqu, int natu) {
   unsigned int ip = threadIdx.x + blockIdx.x * blockDim.x
     + blockIdx.y * blockDim.x * gridDim.x;
@@ -136,7 +145,7 @@ __global__ void fk(double2 * dfk, const double3 * __restrict__ dgv,
     + dgv[ip].y * dgv[ip].y + dgv[ip].z * dgv[ip].z;
   double rk4i = 1.0 / (rk2 * (rk2 + 1.0));
   for (int iu = 0; iu < natu; ++iu) {
-    double ruk = dgv[ip].x * dru[iu].x 
+    double ruk = dgv[ip].x * dru[iu].x
       + dgv[ip].y * dru[iu].y + dgv[ip].z * dru[iu].z;
     double tmp = 4.0 * M_PI * dqu[iu] * rk4i;
     dfk[ip].x += tmp * cos(ruk);
@@ -158,4 +167,3 @@ __global__ void beta2(double * de, double ubeta) {
     + blockIdx.y * blockDim.x * gridDim.x;
   de[ip] *= ubeta;
 }
-

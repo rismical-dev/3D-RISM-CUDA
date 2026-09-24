@@ -2,7 +2,7 @@
 #include <fstream>
 #include "rism3d.h"
 
-void RISM3D :: set_solvent (string hs) {
+void RISM3D :: set_solvent (std::string hs) {
   if (hs != "") rmdft = true;
   sv -> read(fsolvent, hs);
   sv -> spline(ga, indga, nga, ce -> ngrid, rmdft);
