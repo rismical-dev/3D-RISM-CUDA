@@ -19,7 +19,7 @@ void RISM3D :: output() {
     double * xmu = new double[sv -> natv * 2];
     double * xmu2 = new double[sv -> natv];
     double * se = new double[sv -> natv * 2];
-    double dft;
+    double dft = 0.0;
 
     cal_exchem(xmu, xmu2);
     if (rmdft) dft = cal_rmdft();
