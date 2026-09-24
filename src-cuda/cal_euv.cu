@@ -1,8 +1,16 @@
 #include <thrust/device_vector.h>
 #include "rism3d.h"
+#include "cuda_check.h"
+#include "grid_constants.h"
 
-__constant__ double3 dv;
-__constant__ int3 grid;
+// Same indexing formula as cal_qv.cu / cal_grad.cu / fft3d.cu /
+// anderson_cuda.cu / initialize_g.cu's gridIndex() helper. Kept as its own
+// static (internal-linkage) copy here rather than sharing a cross-TU
+// declaration, for the same reason those files each have their own copy.
+static __device__ __forceinline__ unsigned int gridIndex() {
+  return threadIdx.x + blockIdx.x * blockDim.x
+    + blockIdx.y * blockDim.x * gridDim.x;
+}
 
 void RISM3D :: cal_euv (double * & e) {
   __global__ void euv(double * ds, double2 * dhuv, double * dsig,
@@ -11,16 +19,16 @@ void RISM3D :: cal_euv (double * & e) {
 
   int ng = ce -> ngrid;
 
-  cudaMemcpyToSymbol(dv, ce -> dr, sizeof(double3));
-  cudaMemcpyToSymbol(grid, ce -> grid, sizeof(int3));
+  set_grid_constants(ce);
   double * ds2;
-  cudaMalloc(&ds2, g.x * g.y * 2 * sizeof(double));
+  AN_CUDA_CHECK(cudaMalloc(&ds2, g.x * g.y * 2 * sizeof(double)));
 
-  for (size_t iv = 0; iv < sv -> natv; ++iv) {
-    for (size_t iu = 0; iu < su -> num; ++iu) {
+  for (int iv = 0; iv < sv -> natv; ++iv) {
+    for (int iu = 0; iu < su -> num; ++iu) {
       euv <<< g, b, b.x * 2 * sizeof(double) >>>
         (ds2, dguv + iv * ng, dsig, deps, su -> dr, su -> dq, sv -> qv[iv],
          su -> num, iv, iu);
+      AN_CUDA_CHECK(cudaGetLastError());
       thrust::device_ptr<double> ds2_ptr(ds2);
       for (int i = 0; i < 2; ++i) {
         double s = thrust::reduce(ds2_ptr + (g.x * g.y) * i,
@@ -30,16 +38,16 @@ void RISM3D :: cal_euv (double * & e) {
       }
     }
   }
+  AN_CUDA_CHECK(cudaFree(ds2));
 }
-  
+
 __global__ void euv(double * ds, double2 * dguv, double * dsig,
                     double * deps,  double3 * dr, double * qu,
 		    double qv, int natu, int iv, int iu) {
   extern __shared__ double sdata[];
   const double cc = hartree * bohr * avogadoro;
 
-  unsigned int ip = threadIdx.x + blockIdx.x * blockDim.x
-    + blockIdx.y * blockDim.x * gridDim.x;
+  unsigned int ip = gridIndex();
   int iuv = iu + iv * natu;
 
   double dx = ((int)threadIdx.x - grid.x / 2) * dv.x - dr[iu].x;
@@ -57,7 +65,7 @@ __global__ void euv(double * ds, double2 * dguv, double * dsig,
     double ulj = deps[iuv] * 4.0 * rs6i * ( rs6i - 1.0) * dguv[ip].x;
     double uco = qu[iu] * qv / r1 * cc * dguv[ip].x;
     sdata[threadIdx.x] = ulj;
-    sdata[threadIdx.x + blockDim.x] = uco;    
+    sdata[threadIdx.x + blockDim.x] = uco;
   }
   __syncthreads();
 

@@ -1,42 +1,44 @@
 #include <thrust/device_vector.h>
 #include "rism3d.h"
+#include "grid_constants.h"
 
-__constant__ double3 dv;
-__constant__ int3 grid;
-
-void RISM3D :: cal_ad2(double * & du) {
-  __global__ void ad2(double * ds, double2 * dguv, double * dsig, 
+// See cal_ad1.cu's comment: renamed from "du" (which shadowed the
+// unrelated RISM3D device member "du", the LJ potential grid) to "ad"
+// (atomic decomposition), matching the array's name at its call site in
+// output.cu.
+void RISM3D :: cal_ad2(double * & ad) {
+  __global__ void ad2(double * ds, double2 * dguv, double * dsig,
 	              double * deps,  double3 * dr, double * qu,
 		      double qv, int natu, int iv, int iu, double lambda);
 
   int ng = ce -> ngrid;
 
-  cudaMemcpyToSymbol(dv, ce -> dr, sizeof(double3));
-  cudaMemcpyToSymbol(grid, ce -> grid, sizeof(int3));
+  set_grid_constants(ce);
 
   double * ds;
-  cudaMalloc(&ds, g.x * g.y * sizeof(double));
+  AN_CUDA_CHECK(cudaMalloc(&ds, g.x * g.y * sizeof(double)));
 
 #pragma omp parallel for
   for (int iu = 0; iu < su -> num; ++iu) {
-    du[iu] = 0.0;
+    ad[iu] = 0.0;
   }
 
   for (int iv = 0; iv < sv -> natv; ++iv) {
     for (int iu = 0; iu < su -> num; ++iu) {
-      ad2 <<< g, b, b.x * sizeof(double) >>> 
-	(ds, dguv + (iv * ng), dsig, deps, su -> dr, su -> dq, sv -> qv[iv], 
+      ad2 <<< g, b, b.x * sizeof(double) >>>
+	(ds, dguv + (iv * ng), dsig, deps, su -> dr, su -> dq, sv -> qv[iv],
 	 su -> num, iv, iu, lambda);
+      AN_CUDA_CHECK(cudaGetLastError());
 
       thrust::device_ptr<double> ds_ptr(ds);
       double s = thrust::reduce(ds_ptr, ds_ptr + g.x * g.y);
-      du[iu] += s * sv -> rhov[iv];
+      ad[iu] += s * sv -> rhov[iv];
     }
   }
-  cudaFree(ds);
+  AN_CUDA_CHECK(cudaFree(ds));
 }
 
-__global__ void ad2(double * ds, double2 * dguv, double * dsig, 
+__global__ void ad2(double * ds, double2 * dguv, double * dsig,
 		    double * deps,  double3 * dr, double * qu,
                     double qv, int natu, int iv, int iu, double lambda) {
   extern __shared__ double sdata[];

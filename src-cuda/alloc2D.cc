@@ -1,4 +1,4 @@
-#include <vector>
+#include "alloc.h"
 using namespace std;
 
 void alloc2D (vector < double * > & array2, int r1, int r2) {

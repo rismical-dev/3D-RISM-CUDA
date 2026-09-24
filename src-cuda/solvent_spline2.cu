@@ -3,22 +3,18 @@
 #include <string>
 
 #include "solvent.h"
+#include "spline.h"
+#include "alloc.h"
+#include "cuda_check.h"
 
-void Solvent :: spline2 (vector <double> & ga, int * & indga,
+void Solvent :: spline2 (std::vector <double> & ga, int * & indga,
 			int nga, int ngrid) {
-  void alloc2D (vector <double *> &, int, int);
-  void dealloc2D (vector <double *> &);
-  void dealloc3D (vector < vector <double *> > &);
-
-  void spline (double * &, double * &, int, vector <double *> &);
-  double splint (double * &, double * &, vector <double *> &, int, double);
-
   if (ga[nga - 1] > ttab2[ntab - 1]) {
-    cout << "insufficient maximal T tabulated" << endl;
+    std::cout << "insufficient maximal T tabulated" << std::endl;
     exit (1);
   }
 
-  vector <double *> chsa;
+  std::vector <double *> chsa;
   alloc2D(chsa, natv, nga);
   alloc2D(wfka, natv, nga);
 
@@ -28,7 +24,7 @@ void Solvent :: spline2 (vector <double> & ga, int * & indga,
 
   double * x = new double[np];
   double * y = new double[np];
-  vector <double *> coe;
+  std::vector <double *> coe;
   alloc2D(coe, 3, np);
 
   for (int n = 0; n < np; ++n) {
@@ -39,7 +35,7 @@ void Solvent :: spline2 (vector <double> & ga, int * & indga,
     for (int n = 0; n < np; ++n) {
       y[n] = chs[iv][ntabb + n] ;
     }
-    spline(x, y, np, coe) ;
+    ::spline(x, y, np, coe) ;
 #pragma omp parallel for
     for (int i = 0; i < nga; ++i) {
       chsa[iv][i] = splint(x, y, coe, np, ga[i]);
@@ -50,7 +46,7 @@ void Solvent :: spline2 (vector <double> & ga, int * & indga,
     for (int n = 0; n < np; ++n) {
       y[n] = wfk[iv][ntabb + n] ;
     }
-    spline(x, y, np, coe) ;
+    ::spline(x, y, np, coe) ;
 #pragma omp parallel for
     for (int i = 0; i < nga; ++i) {
       wfka[iv][i] = splint(x, y, coe, np, ga[i]);
@@ -64,24 +60,32 @@ void Solvent :: spline2 (vector <double> & ga, int * & indga,
     }
   }
 
-  cudaMalloc(&dc, nga * natv * natv * sizeof(double));
-  cudaMalloc(&dw, nga * natv * sizeof(double));
-  
+  AN_CUDA_CHECK(cudaMalloc(&dc, nga * natv * natv * sizeof(double)));
+  AN_CUDA_CHECK(cudaMalloc(&dw, nga * natv * sizeof(double)));
+
+  // Synchronous, since cvva is deallocated (dealloc3D) right below: an
+  // async copy here would let that free race the H2D transfer (same class
+  // of bug fixed for siguv/epsuv in cal_LJ.cu).
   for (int iv2 = 0; iv2 < natv; ++iv2) {
     for (int iv1 = 0; iv1 < natv; ++iv1) {
-      cudaMemcpyAsync(dc + (iv1 * nga) + (iv2 * natv * nga),
+      AN_CUDA_CHECK(cudaMemcpy(dc + (iv1 * nga) + (iv2 * natv * nga),
       		      cvva[iv2][iv1], nga * sizeof(double),
-      		      cudaMemcpyDefault);
+      		      cudaMemcpyDefault));
     }
   }
 
+  // wfka is a member (kept alive after this function returns, unlike
+  // cvva/chsa/coe above), so the async copy here is safe: nothing frees
+  // wfka before whatever later kernel actually consumes dw.
   for (int iv = 0; iv < natv; ++iv) {
-    cudaMemcpyAsync(dw + (iv * nga), wfka[iv], nga * sizeof(double),
-		    cudaMemcpyDefault);
+    AN_CUDA_CHECK(cudaMemcpyAsync(dw + (iv * nga), wfka[iv], nga * sizeof(double),
+		    cudaMemcpyDefault));
   }
 
-  cudaMalloc(&drho, natv * sizeof(double));
-  cudaMemcpyAsync(drho, rhov, natv * sizeof(double), cudaMemcpyDefault);
+  // rhov is also a member kept alive after this function returns, so this
+  // async copy is likewise safe.
+  AN_CUDA_CHECK(cudaMalloc(&drho, natv * sizeof(double)));
+  AN_CUDA_CHECK(cudaMemcpyAsync(drho, rhov, natv * sizeof(double), cudaMemcpyDefault));
 
   dealloc3D(cvva);
   dealloc2D(coe);

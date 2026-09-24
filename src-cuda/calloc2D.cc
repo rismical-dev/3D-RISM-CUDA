@@ -1,5 +1,4 @@
-#include <vector>
-#include <complex>
+#include "alloc.h"
 using namespace std;
 
 void calloc2D (vector <complex <double> *> & array2, int r1, int r2) {

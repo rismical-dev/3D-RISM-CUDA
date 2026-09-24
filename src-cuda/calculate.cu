@@ -1,18 +1,19 @@
 #include <iostream>
 #include "rism3d.h"
+#include "cuda_check.h"
 
 void RISM3D :: calculate (double cf) {
-  __global__ void kh(double *, const double * __restrict__, 
+  __global__ void kh(double *, const double * __restrict__,
 		     const double * __restrict__, const double * __restrict__,
 		     double);
   __global__ void hnc(double * dtr, const double * __restrict__,
 		      const double * __restrict__, const double * __restrict__,
 		      double);
-  __global__ void trm1mt(double2 *, const double * __restrict__, 
-			 const double * __restrict__, const double * __restrict__, 
+  __global__ void trm1mt(double2 *, const double * __restrict__,
+			 const double * __restrict__, const double * __restrict__,
 			 double);
   __global__ void mqvfk(double2 *, const double2 * __restrict__, double);
-  __global__ void oz(double2 *, const double2 * __restrict__, 
+  __global__ void oz(double2 *, const double2 * __restrict__,
 		     const double * __restrict__, int);
   __global__ void tr(double2 *, double *, const double2 * __restrict__);
 
@@ -20,19 +21,22 @@ void RISM3D :: calculate (double cf) {
 
   if (clos == 0) {
     for (int iv = 0; iv < sv -> natv; ++iv) {
-      kh <<< g, b >>> (dtr + (iv * ng), dt + (iv * ng), 
+      kh <<< g, b >>> (dtr + (iv * ng), dt + (iv * ng),
 		       du + (iv * ng), de, sv -> qv[iv] * cf);
+      AN_CUDA_CHECK(cudaGetLastError());
     }
   } else if (clos == 1) {
     for (int iv = 0; iv < sv -> natv; ++iv) {
-      hnc <<< g, b >>> (dtr + (iv * ng), dt + (iv * ng), 
+      hnc <<< g, b >>> (dtr + (iv * ng), dt + (iv * ng),
 			du + (iv * ng),  de, sv -> qv[iv] * cf);
+      AN_CUDA_CHECK(cudaGetLastError());
     }
-  } 
+  }
 
   for (int iv = 0; iv < sv -> natv; ++iv) {
     trm1mt <<< g, b >>> (dguv + (iv * ng), dtr + (iv * ng),
 			  dt + (iv * ng), dfr, sv -> qv[iv] * cf);
+    AN_CUDA_CHECK(cudaGetLastError());
   }
 
   for (int iv = 0; iv < sv -> natv; ++iv) {
@@ -41,11 +45,13 @@ void RISM3D :: calculate (double cf) {
 
   for (int iv = 0; iv < sv -> natv; ++iv) {
     mqvfk <<< g, b >>> (dguv + (iv * ng), dfk, sv -> qv[iv] * cf);
+    AN_CUDA_CHECK(cudaGetLastError());
   }
 
   for (int iv = 0; iv < sv -> natv; ++iv) {
     oz <<< g, b >>> (dhuv + (iv * ng), dguv,
 		      sv -> dx + (iv * sv -> natv * ng), sv -> natv);
+    AN_CUDA_CHECK(cudaGetLastError());
   }
 
   for (int iv = 0; iv < sv -> natv; ++iv) {
@@ -54,5 +60,6 @@ void RISM3D :: calculate (double cf) {
 
   for (int iv = 0; iv < sv -> natv; ++iv) {
     tr <<< g, b >>> (dguv + (iv * ng), dtr + (iv * ng), dhuv + (iv * ng));
+    AN_CUDA_CHECK(cudaGetLastError());
   }
-} 
+}

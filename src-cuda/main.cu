@@ -2,20 +2,21 @@
 #include <fstream>
 #include <unistd.h>
 #include "rism3d.h"
+#include "cuda_check.h"
 
 int main (int argc, char * argv[]) {
-  RISM3D * system;
+  RISM3D * rism;
   int ch;
   int cu, dn;
-  string input;
-  string structure;
-  string hs;
-  string esp;
+  std::string input;
+  std::string structure;
+  std::string hs;
+  std::string esp;
   bool centering = true;
-  bool q0 = false;  
+  bool q0 = false;
 
   cu = dn = 0;
-  system = new RISM3D;
+  rism = new RISM3D;
 
   while ((ch = getopt(argc, argv, "c:d:i:s:r:1:2:e:fz")) != -1) {
     switch (ch){
@@ -35,10 +36,10 @@ int main (int argc, char * argv[]) {
       hs = optarg;
       break;
     case '1':
-      system -> set_ad (atof(optarg), 1);
+      rism -> set_ad (atof(optarg), 1);
       break;
     case '2':
-      system -> set_ad (atof(optarg), 2);
+      rism -> set_ad (atof(optarg), 2);
       break;
     case 'e':
       esp = optarg;
@@ -53,18 +54,19 @@ int main (int argc, char * argv[]) {
 
   if (input.empty() || structure.empty()) {
     if (argv[optind] == NULL) {
-      cout << "No input file!" << endl;
+      std::cout << "No input file!" << std::endl;
       return (1);
     }
     input = argv[optind];
   }
 
-  cout << "Set device " << dn << endl;
-  cudaSetDevice(dn);
-  if (cu > 0) cout << "Charge up " << cu << endl;
-  system -> initialize(input, structure, esp, hs, centering, q0);
-  system -> iterate(cu);
-  system -> output();    
+  std::cout << "Set device " << dn << std::endl;
+  AN_CUDA_CHECK(cudaSetDevice(dn));
+  if (cu > 0) std::cout << "Charge up " << cu << std::endl;
+  rism -> initialize(input, structure, esp, hs, centering, q0);
+  rism -> iterate(cu);
+  rism -> output();
+  delete rism;
 
   return(0);
 }

@@ -1,16 +1,16 @@
 #include <vector>
-using namespace std;
+#include "spline.h"
 
-double splint (double * & xp, double * &  yp, 
-	       vector <double *> & coe, int np, double x) {
+double splint (const double * xp, const double * yp,
+	       const std::vector <double *> & coe, int np, double x) {
   int klo = 0;
   int khi = np - 1;
 
   while (khi - klo > 1) {
     int k = (khi + klo) >> 1;
-    if (xp[k] > x) 
+    if (xp[k] > x)
       khi = k;
-    else 
+    else
       klo = k;
   }
   int k = klo;

@@ -1,22 +1,28 @@
 #include <thrust/device_vector.h>
 #include "rism3d.h"
+#include "cuda_check.h"
+#include "grid_constants.h"
 
-__constant__ double3 dv;
-__constant__ int3 grid;
-__constant__ int nu;
+// Same indexing formula as cal_qv.cu / fft3d.cu / anderson_cuda.cu /
+// initialize_g.cu's gridIndex() helper. Kept as its own static
+// (internal-linkage) copy here rather than sharing a cross-TU declaration,
+// for the same reason those files each have their own copy.
+static __device__ __forceinline__ unsigned int gridIndex() {
+  return threadIdx.x + blockIdx.x * blockDim.x
+    + blockIdx.y * blockDim.x * gridDim.x;
+}
 
 void RISM3D :: cal_grad(double * & dulj, double * & due) {
-  __global__ void gradlj(double * ds, double2 * dguv, double * dsig, 
-		         double * deps,  double3 * dr, 
-		         int natu, int iv, int iu);
-  __global__ void grade(double * ds, double2 * dguv, double * dsig, 
-		        double3 * dr, double * qu, double gv,
-		        int natu, int iv, int iu);
+  __global__ void gradlj(double * ds, double2 * dguv, double * dsig,
+			 double * deps,  double3 * dr,
+			 int natu, int iv, int iu);
+  __global__ void grade(double * ds, double2 * dguv, double * dsig,
+			double3 * dr, double * qu, double gv,
+			int natu, int iv, int iu);
 
-  cudaMemcpyToSymbol(dv, ce -> dr, sizeof(double3));
-  cudaMemcpyToSymbol(grid, ce -> grid, sizeof(int3));
+  set_grid_constants(ce);
   double * ds3;
-  cudaMalloc(&ds3, g.x * g.y * 3 * sizeof(double));
+  AN_CUDA_CHECK(cudaMalloc(&ds3, g.x * g.y * 3 * sizeof(double)));
   thrust::device_ptr<double> ds3_ptr(ds3);
 
 #pragma omp parallel for
@@ -27,34 +33,36 @@ void RISM3D :: cal_grad(double * & dulj, double * & due) {
 
   for (int iv = 0; iv < sv -> natv; ++iv) {
     for (int iu = 0; iu < su -> num; ++iu) {
-      gradlj <<< g, b, b.x * 3 * sizeof(double) >>> 
-	(ds3, dguv + (iv * ce -> ngrid), dsig, deps, su -> dr, 
+      gradlj <<< g, b, b.x * 3 * sizeof(double) >>>
+	(ds3, dguv + (iv * ce -> ngrid), dsig, deps, su -> dr,
 	 su -> num, iv, iu);
+      AN_CUDA_CHECK(cudaGetLastError());
       for (int i = 0; i< 3; ++i) {
-	double s = thrust::reduce(ds3_ptr + (g.x * g.y) * i, 
+	double s = thrust::reduce(ds3_ptr + (g.x * g.y) * i,
 				  ds3_ptr + (g.x * g.y) * (i + 1));
 	dulj[iu * 3 + i] += s * sv -> rhov[iv];
       }
-      grade <<< g, b, b.x * 3 * sizeof(double) >>> 
+      grade <<< g, b, b.x * 3 * sizeof(double) >>>
 	(ds3, dguv + (iv * ce -> ngrid), dsig, su -> dr, su -> dq,
 	 sv -> qv[iv], su -> num, iv, iu);
+      AN_CUDA_CHECK(cudaGetLastError());
       for (int i = 0; i< 3; ++i) {
-	double s = thrust::reduce(ds3_ptr + (g.x * g.y) * i, 
+	double s = thrust::reduce(ds3_ptr + (g.x * g.y) * i,
 				  ds3_ptr + (g.x * g.y) * (i + 1));
 	due[iu * 3 + i] += s * sv -> rhov[iv];
       }
     }
   }
+  AN_CUDA_CHECK(cudaFree(ds3));
 }
 
 
-__global__ void gradlj(double * ds, double2 * dguv, double * dsig, 
-  		       double * deps,  double3 * dr, 
+__global__ void gradlj(double * ds, double2 * dguv, double * dsig,
+  		       double * deps,  double3 * dr,
 		       int natu, int iv, int iu) {
   extern __shared__ double sdata[];
 
-  unsigned int ip = threadIdx.x + blockIdx.x * blockDim.x
-    + blockIdx.y * blockDim.x * gridDim.x;
+  unsigned int ip = gridIndex();
   int iuv = iu + iv * natu;
 
   double dx = ((int)threadIdx.x - grid.x / 2) * dv.x - dr[iu].x;
@@ -70,7 +78,7 @@ __global__ void gradlj(double * ds, double2 * dguv, double * dsig,
   } else {
     double rs2i = dsig[iuv] * dsig[iuv] / r2;
     double rs6i = rs2i * rs2i * rs2i;
-    double ulj = deps[iuv] * 24.0 * rs6i / r2 * (2.0 * rs6i - 1.0) 
+    double ulj = deps[iuv] * 24.0 * rs6i / r2 * (2.0 * rs6i - 1.0)
       * dguv[ip].x;
     sdata[threadIdx.x] = ulj * dx;
     sdata[threadIdx.x + blockDim.x] = ulj * dy;
@@ -97,14 +105,13 @@ __global__ void gradlj(double * ds, double2 * dguv, double * dsig,
   }
 }
 
-__global__ void grade(double * ds, double2 * dguv, double * dsig, 
+__global__ void grade(double * ds, double2 * dguv, double * dsig,
 		      double3 * dr, double * qu,
 		      double qv, int natu, int iv, int iu) {
   extern __shared__ double sdata[];
   const double cc = hartree * bohr * avogadoro;
 
-  unsigned int ip = threadIdx.x + blockIdx.x * blockDim.x
-    + blockIdx.y * blockDim.x * gridDim.x;
+  unsigned int ip = gridIndex();
   int iuv = iu + iv * natu;
 
   double dx = ((int)threadIdx.x - grid.x / 2) * dv.x - dr[iu].x;

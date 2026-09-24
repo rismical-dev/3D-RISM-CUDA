@@ -18,28 +18,32 @@ bool isNaturalNumber(const std::string& str) {
   }
 }
 
-void RISM3D :: read_input (string control, string structure, bool centering) {
+void RISM3D :: read_input (std::string control, std::string structure, bool centering) {
 
-  ifstream in_file;
+  std::ifstream in_file;
   in_file.open (control.c_str());
-
-  cout << "reading input data file  : " << control << endl;
-
-  string check;
-  in_file >> outlist >> co -> ksave >> check;
-  if (check != version) {
-    cout << "Error: This input file is for old version." << endl;
+  if (!in_file) {
+    std::cerr << "Control file could not be opened!" << std::endl;
     exit (1);
   }
 
-  string closure;
+  std::cout << "reading input data file  : " << control << std::endl;
+
+  std::string check;
+  in_file >> outlist >> co -> ksave >> check;
+  if (check != version) {
+    std::cout << "Error: This input file is for old version." << std::endl;
+    exit (1);
+  }
+
+  std::string closure;
   in_file >> closure;
   if (closure == "KH") {
     clos = 0;
   } else if (closure == "HNC") {
     clos = 1;
   } else {
-    cout << "Error: Unexpected closure switch " << endl;
+    std::cout << "Error: Unexpected closure switch " << std::endl;
     exit(1);
   }
   in_file >> fsolvent;
@@ -51,18 +55,22 @@ void RISM3D :: read_input (string control, string structure, bool centering) {
   if (!structure.empty()) {
     in_file.close ();
     in_file.open (structure.c_str());
-    cout << "reading solute data file : " << structure << endl;
+    if (!in_file) {
+      std::cerr << "Structure file could not be opened!" << std::endl;
+      exit (1);
+    }
+    std::cout << "reading solute data file : " << structure << std::endl;
   }
 
   int num;
 
-  string tmp;
+  std::string tmp;
   in_file >> tmp;
 
   if (isNaturalNumber(tmp)) {
     num = std::stoi(tmp);
   } else {
-    cout << "Error: Number of solute atom is not a natural number." << endl;
+    std::cout << "Error: Number of solute atom is not a natural number." << std::endl;
     exit(1);
   }
 
@@ -78,12 +86,12 @@ void RISM3D :: read_input (string control, string structure, bool centering) {
   in_file.close ();
 
   if (centering) {
-    ce -> shift = su -> centering();
+    su -> centering(ce -> shift);
   }
 
   if (zero) {
     su -> zero();
   }
-    
+
   su -> setup_cuda();
 }

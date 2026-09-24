@@ -1,12 +1,13 @@
 #include <vector>
-using namespace std;
+#include "spline.h"
 
-void spline (double * & xp, double * & yp, int np, vector <double *> & coe) {
-  double a[np];
-  double b[np];
-  double c[np];
-  double d[np];
-  double s[np];
+void spline (const double * xp, const double * yp, int np,
+             const std::vector <double *> & coe) {
+  std::vector<double> a(np);
+  std::vector<double> b(np);
+  std::vector<double> c(np);
+  std::vector<double> d(np);
+  std::vector<double> s(np);
 
   int n = np - 2;
 
