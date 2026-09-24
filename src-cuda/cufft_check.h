@@ -8,6 +8,13 @@
 // cuFFT has no built-in cufftGetErrorString(), so the mapping is done here.
 // (This also matches whatever cuFFT compatibility layer SCALE provides for
 // the AMD build, since the cufftResult codes themselves are just an enum.)
+//
+// Only codes present in every cuFFT version we build against are listed.
+// CUFFT_INCOMPLETE_PARAMETER_LIST and CUFFT_PARSE_ERROR were removed from
+// the cufftResult enum in newer CUDA toolkits (naming them is a compile
+// error there), and since they're enum values rather than macros they
+// can't be #ifdef'd. They fall through to "UNKNOWN_CUFFT_ERROR", and the
+// macro below also prints the numeric code, so nothing is lost.
 inline const char * anCufftErrorString (cufftResult err) {
   switch (err) {
     case CUFFT_SUCCESS:              return "CUFFT_SUCCESS";
@@ -20,9 +27,7 @@ inline const char * anCufftErrorString (cufftResult err) {
     case CUFFT_SETUP_FAILED:         return "CUFFT_SETUP_FAILED";
     case CUFFT_INVALID_SIZE:         return "CUFFT_INVALID_SIZE";
     case CUFFT_UNALIGNED_DATA:       return "CUFFT_UNALIGNED_DATA";
-    case CUFFT_INCOMPLETE_PARAMETER_LIST: return "CUFFT_INCOMPLETE_PARAMETER_LIST";
     case CUFFT_INVALID_DEVICE:       return "CUFFT_INVALID_DEVICE";
-    case CUFFT_PARSE_ERROR:          return "CUFFT_PARSE_ERROR";
     case CUFFT_NO_WORKSPACE:         return "CUFFT_NO_WORKSPACE";
     case CUFFT_NOT_IMPLEMENTED:      return "CUFFT_NOT_IMPLEMENTED";
     case CUFFT_NOT_SUPPORTED:        return "CUFFT_NOT_SUPPORTED";

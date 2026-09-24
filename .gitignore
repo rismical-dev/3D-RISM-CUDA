@@ -1,3 +1,4 @@
 3drism-cuda
 *.o
+*.d
 *~

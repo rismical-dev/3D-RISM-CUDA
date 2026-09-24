@@ -1,8 +1,43 @@
 ### INSTALL
 
-Edit Makefile
+Requirements: CUDA Toolkit (nvcc, cuFFT) and g++ with OpenMP support.
+The AMD build uses the SCALE compiler in place of the CUDA Toolkit.
 
+Build with default settings (CUDA in /usr/local/cuda, target sm_90 = H100):
+
+<pre>
 make
+</pre>
+
+The CUDA location and GPU target can be set on the command line
+instead of editing the Makefile:
+
+<pre>
+make CUDA_DIR=/opt/cuda-12.4 GPU_ARCH=sm_80
+</pre>
+
+<pre>
+Variable   Default           Meaning
+--------------------------------------------------------------------
+CUDA_DIR   /usr/local/cuda   CUDA (or SCALE) installation directory
+GPU_ARCH   sm_90             GPU target passed to nvcc -gencode
+</pre>
+
+Both use `?=`, so an environment variable of the same name also takes
+effect. If the build picks up an unexpected path, check `echo $CUDA_DIR`.
+
+For AMD GPUs with SCALE, set `CUDA_DIR` to the SCALE target directory and
+`GPU_ARCH` to the `sm_XX` that your SCALE installation maps to the AMD GPU
+(e.g. gfx942 for MI300).
+
+Header dependencies are tracked automatically (`.d` files), so after
+editing a header only the files that include it are recompiled.
+Run `make clean` to remove objects and dependency files; do this once
+after updating from an older Makefile.
+
+The program uses only the CUDA runtime API, so it links against
+`libcudart` and `libcufft`; `libcuda` (the driver library) is not needed,
+and the program can be built on nodes without a GPU driver.
 
 ### PERFORMANCE
 
